@@ -141,3 +141,16 @@ class ActionManager:
       await ActionManager().execute_action(name, update, context, args=args)
     except Exception as e:
       logger.exception(f'Error handling action "{name}": {e}')
+
+  async def redirect(self, action_name: str, update: Update, context: ContextTypes.DEFAULT_TYPE,
+                     args: dict | None = None) -> None:
+    """
+    Редирект на указанное действие.
+
+    :param action_name: Имя действия для вызова.
+    :param update: Объект Update.
+    :param context: Контекст Telegram.
+    :param args: Аргументы для переданного действия.
+    """
+    logger.info('Redirecting to action: %s', action_name)
+    await self.execute_action(action_name, update, context, args)
