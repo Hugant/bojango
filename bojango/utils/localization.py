@@ -133,13 +133,11 @@ class LateValue:
     """Выполняет перевод с использованием глобального локализатора."""
     localizer = LocalizationManager.get_instance()
     translated_text = localizer.translate(self.key)
-    print(self.kwargs)
-    print(translated_text)
+
     if '__value' not in self.kwargs:
       return translated_text % self.kwargs
     else:
       return translated_text % self.kwargs['__value']
-
 
   def __mod__(self, other: Any) -> 'LateValue':
     """
@@ -154,8 +152,6 @@ class LateValue:
     else:
       formatted_kwargs = {**self.kwargs, '__value': other}
       return LateValue(self.key, **formatted_kwargs)
-
-
 
   def __str__(self) -> str:
     """Автоматически возвращает результат перевода."""
