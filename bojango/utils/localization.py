@@ -1,9 +1,10 @@
-from typing import Any, Self
+import os
+from typing import Any, Self, List, Tuple
 import gettext
 from abc import ABC, abstractmethod
 import logging
 
-# Logger initialization
+
 logger = logging.getLogger(__name__)
 
 
@@ -55,6 +56,29 @@ class LocalizationManager(BaseLocalizer):
     self.translations = {}
     self.__initialized = True
     logger.info('LocalizationManager initialized with default language: %s', default_language)
+
+  def get_available_languages(self) -> List[Tuple[str, str]]:
+    """
+    Возвращает список доступных языков и их локализованных названий.
+
+    :return: Список кортежей вида (код языка, локализованное название).
+    """
+    try:
+      languages = [
+        lang for lang in os.listdir(self.locales_dir)
+        if os.path.isdir(os.path.join(self.locales_dir, lang)) and
+        os.path.exists(os.path.join(self.locales_dir, lang, 'LC_MESSAGES', 'messages.mo'))
+      ]
+
+      result = []
+      for lang in languages:
+        translation = self.get_translation(lang)
+        localized_name = translation.gettext('language_name') or lang
+        result.append((lang, localized_name))
+      return result
+
+    except Exception as e:
+      raise RuntimeError(f'Error retrieving available languages: {e}')
 
   @classmethod
   def get_instance(cls) -> Self:

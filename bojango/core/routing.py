@@ -1,7 +1,7 @@
 from typing import Callable, Self
 
 from telegram import Update
-from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
+from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes, MessageHandler, filters
 
 from bojango.action.manager import ActionManager
 from bojango.action.screen import ActionScreen
@@ -21,6 +21,7 @@ class Router:
 			cls._instance._action_manager = action_manager
 			cls._instance._commands = {}
 			cls._instance._callbacks = {}
+			cls._instance._message_handlers = []
 		return cls._instance
 
 	def register_command(self, command: str, handler: Callable) -> None:
@@ -41,6 +42,10 @@ class Router:
 		self._callbacks[query] = handler
 		self._action_manager.register_action(query, handler)
 
+	def register_message(self, handler: Callable, pattern: str = '.*') -> None:
+		"""Регистрирует обработчик сообщений."""
+		self._message_handlers.append((pattern, handler))
+
 	def attach_to_application(self, application: Application) -> None:
 		"""Привязывает маршруты к Telegram Application.
 
@@ -51,6 +56,9 @@ class Router:
 		for query, handler in self._callbacks.items():
 			application.add_handler(CallbackQueryHandler(handler, pattern=f'^{query}'))
 
+		for pattern, handler in self._message_handlers:
+			application.add_handler(MessageHandler(filters.ALL, handler))
+
 	def get_routes(self) -> dict[str, Callable]:
 		"""Возвращает все зарегистрированные маршруты.
 
@@ -60,15 +68,17 @@ class Router:
 
 
 def _wrap_handler(handler: Callable, expects_args: bool = False) -> Callable:
-	"""Обёртка для обработки async_generator и передачи аргументов.
+	"""Обёртка для обработки async_generator и передачи аргументов."""
 
-  :param handler: Обработчик команды или callback.
-  :param expects_args: Флаг, указывающий, ожидает ли обработчик аргументы.
-  :return: Обёрнутый обработчик.
-  """
+	async def wrapped_handler(update: Update, context: ContextTypes.DEFAULT_TYPE, args: dict | None = None) -> None:
+		"""
+		Обработчик, принимающий аргументы.
 
-	async def wrapped_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-		args = {}
+		:param update: Объект обновления Telegram.
+		:param context: Контекст.
+		:param args: Дополнительные аргументы.
+		"""
+		args = args or {}
 
 		query = update.callback_query
 		if query and query.data:
@@ -81,15 +91,15 @@ def _wrap_handler(handler: Callable, expects_args: bool = False) -> Callable:
 		else:
 			result = handler(update, context)
 
-		# Обрабатываем результат обработчика
-		if hasattr(result, '__aiter__'):  # async_generator
+		# Если это async_generator
+		if hasattr(result, '__aiter__'):
 			async for screen in result:
 				if isinstance(screen, ActionScreen):
 					await screen.render(update, context)
 				else:
 					raise ValueError('Обработчик должен возвращать ActionScreen.')
 		else:
-			await result  # обычная корутина
+			await result  # Если это обычная корутина
 
 	return wrapped_handler
 
@@ -119,6 +129,21 @@ def callback(query: str) -> Callable:
 	def decorator(handler: Callable) -> Callable:
 		router = Router()
 		router.register_callback(query, _wrap_handler(handler, expects_args=True))
+		return handler
+
+	return decorator
+
+
+def message(pattern: str = ".*") -> Callable:
+	"""
+	Декоратор для регистрации хендлера текстовых сообщений.
+
+	:param pattern: Регулярное выражение для фильтрации сообщений.
+	"""
+
+	def decorator(handler: Callable) -> Callable:
+		router = Router()
+		router.register_message(handler, pattern)
 		return handler
 
 	return decorator

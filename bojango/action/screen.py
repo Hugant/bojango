@@ -8,11 +8,11 @@ from bojango.utils.localization import LateValue
 
 # Настройка логирования
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-handler = logging.StreamHandler()
-formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-handler.setFormatter(formatter)
-logger.addHandler(handler)
+# logger.setLevel(logging.DEBUG)
+# handler = logging.StreamHandler()
+# formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+# handler.setFormatter(formatter)
+# logger.addHandler(handler)
 
 
 class ScreenType(Enum):
@@ -42,7 +42,7 @@ class ActionScreen:
     self,
     text: str | LateValue,
     buttons: list[list[ActionButton]] | None = None,
-    screen_type: ScreenType = ScreenType.NEW,
+    screen_type: ScreenType = ScreenType.REPLACE,
     message_id: int | None = None
   ) -> None:
     """
@@ -83,6 +83,13 @@ class ActionScreen:
 
     try:
       if self.screen_type == ScreenType.NEW:
+        await context.bot.send_message(
+          chat_id=chat_id,
+          text=text,
+          reply_markup=keyboard,
+          parse_mode='markdown'
+        )
+      elif self.screen_type == ScreenType.REPLACE and not query:
         await context.bot.send_message(
           chat_id=chat_id,
           text=text,

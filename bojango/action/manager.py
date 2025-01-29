@@ -8,10 +8,10 @@ from bojango.core.utils import decode_callback_data
 
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-console_handler = logging.StreamHandler()
-console_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
-logger.addHandler(console_handler)
+# logger.setLevel(logging.DEBUG)
+# console_handler = logging.StreamHandler()
+# console_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+# logger.addHandler(console_handler)
 
 
 class ActionAlreadyExistsError(Exception):
@@ -41,17 +41,22 @@ class Action:
     self.callback = callback
     logger.debug(f'Action initialized: {name}')
 
-  async def execute(self, update: Update, context: ContextTypes.DEFAULT_TYPE, args: Dict[str, Any] | None = None) -> AsyncIterable[ActionScreen]:
-    """
-    Выполняет действие и возвращает экраны.
+  async def execute(self, update: Update, context: ContextTypes.DEFAULT_TYPE, args: dict | None = None) -> \
+  AsyncIterable[ActionScreen]:
+    """Выполняет действие, возвращающее экраны."""
+    args = args or {}
 
-    :param update: Объект обновления от Telegram.
-    :param context: Контекст Telegram.
-    :param args: Дополнительные аргументы.
-    :yield: ActionScreen объекты для рендера.
-    """
+    # Получаем результат выполнения callback
+    result = self.callback(update, context, args)
+
     logger.debug(f'Executing action: {self.name} with args: {args}')
-    async for screen in self.callback(update, context, args):
+    # Проверяем, является ли результат асинхронным генератором
+    if hasattr(result, '__aiter__'):
+      async for screen in result:
+        yield screen
+    else:
+      # Если это обычная корутина
+      screen = await result
       yield screen
 
 
@@ -142,8 +147,9 @@ class ActionManager:
     except Exception as e:
       logger.exception(f'Error handling action "{name}": {e}')
 
-  async def redirect(self, action_name: str, update: Update, context: ContextTypes.DEFAULT_TYPE,
-                     args: dict | None = None) -> None:
+  @staticmethod
+  async def redirect(action_name: str, update: Update, context: ContextTypes.DEFAULT_TYPE,
+                     args: dict | None = None) -> ActionScreen:
     """
     Редирект на указанное действие.
 
@@ -153,4 +159,8 @@ class ActionManager:
     :param args: Аргументы для переданного действия.
     """
     logger.info('Redirecting to action: %s', action_name)
-    await self.execute_action(action_name, update, context, args)
+    action_manager: ActionManager = ActionManager()
+    action = action_manager.get_action(action_name)
+    async for screen in action.execute(update, context, args):
+      if screen:
+        return screen

@@ -55,8 +55,8 @@ class BojangoBot:
     """Валидация конфигурации бота."""
     if not self.config.api_token:
       raise ValueError('API token must be set in the configuration.')
-    if not self.config.localizer:
-      raise ValueError('LocalizationManager must be set in the configuration.')
+    # if not self.config.localizer:
+    #   raise ValueError('LocalizationManager must be set in the configuration.')
     if not self.config.handlers_modules:
       raise ValueError('At least one handlers module must be specified in the configuration.')
 
