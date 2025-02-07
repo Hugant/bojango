@@ -2,8 +2,9 @@ import asyncio
 import importlib
 import logging
 from dataclasses import dataclass, field
-from typing import Optional, List
+from typing import Optional, List, Self
 
+from telegram import Message
 from telegram.ext import ApplicationBuilder, Application
 
 from bojango.action.manager import ActionManager
@@ -23,12 +24,17 @@ class BojangoBotConfig:
 class BojangoBot:
   """Класс основного бота Bojango."""
 
+  _instance: Self | None = None
+
   def __init__(self, config: BojangoBotConfig):
     """
     Инициализация бота с заданной конфигурацией.
 
     :param config: Конфигурация бота.
     """
+    if BojangoBot._instance is not None:
+      raise RuntimeError('BojangoBot has been initialized. Use get_instance().')
+
     self.config = config
     self._validate_config()
 
@@ -50,6 +56,20 @@ class BojangoBot:
     self._load_handlers()
     self.__app.bot_data['action_manager'] = self.action_manager
     self.router.attach_to_application(self.__app)
+
+    BojangoBot._instance = self
+
+  @classmethod
+  def get_instance(cls) -> Self:
+    """
+		Возвращает текущий экземпляр BojangoBot.
+
+		:return: Экземпляр бота.
+		:raises RuntimeError: Если бот еще не был инициализирован.
+		"""
+    if cls._instance is None:
+      raise RuntimeError('BojangoBot has not initialized. Сначала создайте его экземпляр.')
+    return cls._instance
 
   def _validate_config(self):
     """Валидация конфигурации бота."""
@@ -104,3 +124,33 @@ class BojangoBot:
     """
     self.logger.info('Running bot synchronously...')
     asyncio.run(self.start())
+
+  async def send_message(self, chat_id: int, text: str, parse_mode: str = 'Markdown', reply_markup=None) -> Message:
+    """
+    Отправляет сообщение пользователю.
+
+    :param chat_id: ID чата пользователя.
+    :param text: Текст сообщения.
+    :param parse_mode: Режим разметки (по умолчанию Markdown).
+    :param reply_markup: Клавиатура или инлайн-кнопки.
+    :return: Объект отправленного сообщения.
+    """
+    self.logger.debug('Sending message to chat %s', chat_id)
+    return await self.__app.bot.send_message(chat_id=chat_id, text=text, parse_mode=parse_mode,
+                                             reply_markup=reply_markup)
+
+  async def edit_message(self, chat_id: int, message_id: int, new_text: str, parse_mode: str = 'Markdown',
+                         reply_markup=None):
+    """
+    Редактирует существующее сообщение.
+
+    :param chat_id: ID чата пользователя.
+    :param message_id: ID редактируемого сообщения.
+    :param new_text: Новый текст сообщения.
+    :param parse_mode: Режим разметки (по умолчанию Markdown).
+    :param reply_markup: Клавиатура или инлайн-кнопки.
+    """
+    self.logger.debug('Editing message %s in chat %s', message_id, chat_id)
+    await self.__app.bot.edit_message_text(chat_id=chat_id, message_id=message_id, text=new_text, parse_mode=parse_mode,
+                                           reply_markup=reply_markup)
+

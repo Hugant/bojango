@@ -25,15 +25,19 @@ class ScreenType(Enum):
 
 class ActionButton:
   """Класс для управления кнопками экрана."""
-  def __init__(self, text: str | LateValue, action_name: str, args: dict[str, Any] | None = None):
+  def __init__(self, text: str | LateValue, action_name: str | None = None, url: str | None = None, args: dict[str, Any] | None = None):
     """
     :param text: Текст кнопки или LateValue для локализации.
     :param action_name: Название действия, которое вызовет кнопка.
     :param args: Дополнительные аргументы для действия.
     """
     self.text = text
+    self.url = url
     self.action_name = action_name
     self.args = args
+
+    if self.action_name is None and self.url is None:
+      raise ValueError('You must specify either action_name or url')
 
 
 class ActionScreen:
@@ -138,7 +142,8 @@ class ActionScreen:
       keyboard.append([
         InlineKeyboardButton(
           text=self.resolve_text(button.text),
-          callback_data=encode_callback_data(button.action_name, button.args)
+          url=button.url if button.url else None,
+          callback_data=encode_callback_data(button.action_name, button.args) if not button.url else None,
         )
         for button in row
       ])
