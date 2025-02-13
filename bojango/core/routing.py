@@ -85,13 +85,11 @@ def _wrap_handler(handler: Callable, expects_args: bool = False) -> Callable:
 			action_name, decoded_args = decode_callback_data(query.data)
 			args.update(decoded_args or {})
 
-		# Вызываем обработчик
 		if expects_args:
 			result = handler(update, context, args)
 		else:
 			result = handler(update, context)
 
-		# Если это async_generator
 		if hasattr(result, '__aiter__'):
 			async for screen in result:
 				if isinstance(screen, ActionScreen):
@@ -99,7 +97,7 @@ def _wrap_handler(handler: Callable, expects_args: bool = False) -> Callable:
 				else:
 					raise ValueError('Обработчик должен возвращать ActionScreen.')
 		else:
-			await result  # Если это обычная корутина
+			await result
 
 	return wrapped_handler
 

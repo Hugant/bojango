@@ -8,10 +8,6 @@ from bojango.core.utils import decode_callback_data
 
 
 logger = logging.getLogger(__name__)
-# logger.setLevel(logging.DEBUG)
-# console_handler = logging.StreamHandler()
-# console_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
-# logger.addHandler(console_handler)
 
 
 class ActionAlreadyExistsError(Exception):
@@ -46,16 +42,13 @@ class Action:
     """Выполняет действие, возвращающее экраны."""
     args = args or {}
 
-    # Получаем результат выполнения callback
     result = self.callback(update, context, args)
 
     logger.debug(f'Executing action: {self.name} with args: {args}')
-    # Проверяем, является ли результат асинхронным генератором
     if hasattr(result, '__aiter__'):
       async for screen in result:
         yield screen
     else:
-      # Если это обычная корутина
       screen = await result
       yield screen
 

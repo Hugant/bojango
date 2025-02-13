@@ -16,8 +16,8 @@ from bojango.utils.localization import BaseLocalizer
 class BojangoBotConfig:
   """Конфигурация бота."""
   api_token: str
-  localizer: BaseLocalizer
   handlers_modules: List[str]
+  localizer: Optional[BaseLocalizer] = None
   telegram_bot_base_url: Optional[str] = None
 
 

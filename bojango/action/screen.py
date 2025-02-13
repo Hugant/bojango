@@ -6,13 +6,8 @@ from telegram.ext import ContextTypes
 from bojango.core.utils import encode_callback_data
 from bojango.utils.localization import LateValue
 
-# Настройка логирования
+
 logger = logging.getLogger(__name__)
-# logger.setLevel(logging.DEBUG)
-# handler = logging.StreamHandler()
-# formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-# handler.setFormatter(formatter)
-# logger.addHandler(handler)
 
 
 class ScreenType(Enum):
