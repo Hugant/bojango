@@ -42,7 +42,8 @@ async def about_callback(update, context, args):
 # Обработчик текстовых сообщений (фильтрация номеров телефона)
 @message(pattern=r'^\d{10}$')
 async def phone_number_handler(update, context):
-	yield ActionScreen(
-		text='Вы отправили номер телефона!',
-		buttons=[[ActionButton(text='Ок', action_name='start')]]
-	)
+	await ActionManager.redirect('about', update, context)
+	# yield ActionScreen(
+	# 	text='Вы отправили номер телефона!',
+	# 	buttons=[[ActionButton(text='Ок', action_name='start')]]
+	# )

@@ -18,7 +18,7 @@ class BojangoBotConfig:
   api_token: str
   handlers_modules: List[str]
   localizer: Optional[BaseLocalizer] = None
-  telegram_bot_base_url: Optional[str] = None
+  base_url: Optional[str] = None
 
 
 class BojangoBot:
@@ -43,8 +43,8 @@ class BojangoBot:
 
     # Настройка Telegram Application
     self.__app = ApplicationBuilder().token(config.api_token)
-    if config.telegram_bot_base_url:
-      self.__app.base_url(config.telegram_bot_base_url)
+    if config.base_url:
+      self.__app.base_url(config.base_url)
     self.__app.local_mode(True)
     self.__app: Application = self.__app.build()
 

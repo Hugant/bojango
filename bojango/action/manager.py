@@ -37,20 +37,22 @@ class Action:
     self.callback = callback
     logger.debug(f'Action initialized: {name}')
 
-  async def execute(self, update: Update, context: ContextTypes.DEFAULT_TYPE, args: dict | None = None) -> \
+  async def execute(self, update: Update, context: ContextTypes.DEFAULT_TYPE, **kwargs) -> \
   AsyncIterable[ActionScreen]:
     """Выполняет действие, возвращающее экраны."""
-    args = args or {}
+    result = self.callback(update, context, **kwargs)
 
-    result = self.callback(update, context, args)
-
-    logger.debug(f'Executing action: {self.name} with args: {args}')
-    if hasattr(result, '__aiter__'):
-      async for screen in result:
+    logger.debug(f'Executing action: {self.name} with args: {kwargs}')
+    try:
+      if hasattr(result, '__aiter__'):
+        async for screen in result:
+          yield screen
+      else:
+        screen = await result
         yield screen
-    else:
-      screen = await result
-      yield screen
+    except TypeError as e:
+      print(e.args)
+      raise TypeError(f'Executing action {self.name} required positional arguments: {e.args[0]}')
 
 
 class ActionManager:
@@ -92,7 +94,7 @@ class ActionManager:
     logger.debug(f'Action retrieved: {name}')
     return self._actions[name]
 
-  async def execute_action(self, name: str, update: Update, context: ContextTypes.DEFAULT_TYPE, args: Dict[str, Any] | None = None) -> None:
+  async def execute_action(self, name: str, update: Update, context: ContextTypes.DEFAULT_TYPE, **kwargs) -> None:
     """
     Выполняет действие по имени.
 
@@ -102,10 +104,10 @@ class ActionManager:
     :param args: Дополнительные параметры.
     :raises ValueError: Если действие возвращает не ActionScreen.
     """
-    logger.info(f'Executing action: {name} with args: {args}')
+    logger.info(f'Executing action: {name} with args: {kwargs}')
     action = self.get_action(name)
     try:
-      async for screen in action.execute(update, context, args):
+      async for screen in action.execute(update, context, **kwargs):
         if isinstance(screen, ActionScreen):
           logger.debug(f'Rendering screen from action: {name}')
           await screen.render(update, context)
@@ -117,7 +119,7 @@ class ActionManager:
       raise
 
   @staticmethod
-  async def handle(name: str, update: Update, context: ContextTypes.DEFAULT_TYPE, **data) -> None:
+  async def handle(name: str, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """
     Обрабатывает callback и выполняет действие.
 
@@ -126,23 +128,24 @@ class ActionManager:
     :param context: Контекст Telegram.
     :param data: Дополнительные данные.
     """
+    data = {}
     logger.debug(f'Handling action: {name} with data: {data}')
     try:
       query = update.callback_query
+      user_data = context.user_data
       if query and query.data:
-        name, args = decode_callback_data(query.data)
-        if data:
-          args = {**args, **data} if args else data
+        action_name = query.data
+        args = user_data.pop(action_name, {})
       else:
-        args = data
+        args = {}
 
-      await ActionManager().execute_action(name, update, context, args=args)
+      await ActionManager().execute_action(name, update, context, **args)
     except Exception as e:
       logger.exception(f'Error handling action "{name}": {e}')
 
   @staticmethod
   async def redirect(action_name: str, update: Update, context: ContextTypes.DEFAULT_TYPE,
-                     args: dict | None = None) -> ActionScreen:
+                     **kwargs) -> ActionScreen:
     """
     Редирект на указанное действие.
 
@@ -154,6 +157,7 @@ class ActionManager:
     logger.info('Redirecting to action: %s', action_name)
     action_manager: ActionManager = ActionManager()
     action = action_manager.get_action(action_name)
-    async for screen in action.execute(update, context, args):
+    # context.user_data[action.name] = kwargs
+    async for screen in action.execute(update, context, **kwargs):
       if screen:
         return screen

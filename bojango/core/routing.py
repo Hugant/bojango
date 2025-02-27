@@ -54,10 +54,10 @@ class Router:
 		for command, handler in self._commands.items():
 			application.add_handler(CommandHandler(command, handler))
 		for query, handler in self._callbacks.items():
-			application.add_handler(CallbackQueryHandler(handler, pattern=f'^{query}'))
+			application.add_handler(CallbackQueryHandler(handler, pattern=f'{query}'))
 
 		for pattern, handler in self._message_handlers:
-			application.add_handler(MessageHandler(filters.ALL, handler))
+			application.add_handler(MessageHandler(filters.TEXT & filters.Regex(pattern), handler))
 
 	def get_routes(self) -> dict[str, Callable]:
 		"""Возвращает все зарегистрированные маршруты.
@@ -67,10 +67,10 @@ class Router:
 		return {**self._commands, **self._callbacks}
 
 
-def _wrap_handler(handler: Callable, expects_args: bool = False) -> Callable:
+def _wrap_handler(handler: Callable) -> Callable:
 	"""Обёртка для обработки async_generator и передачи аргументов."""
 
-	async def wrapped_handler(update: Update, context: ContextTypes.DEFAULT_TYPE, args: dict | None = None) -> None:
+	async def wrapped_handler(update: Update, context: ContextTypes.DEFAULT_TYPE, **kwargs) -> None:
 		"""
 		Обработчик, принимающий аргументы.
 
@@ -78,17 +78,30 @@ def _wrap_handler(handler: Callable, expects_args: bool = False) -> Callable:
 		:param context: Контекст.
 		:param args: Дополнительные аргументы.
 		"""
-		args = args or {}
-
+		# args = args or {}
+		#
+		# query = update.callback_query
+		# if query and query.data:
+		# 	action_name, decoded_args = decode_callback_data(query.data)
+		# 	args.update(decoded_args or {})
+		#
+		# if expects_args:
+		# 	result = handler(update, context, args)
+		# else:
+		# 	result = handler(update, context)
+		print(context.user_data)
+		print(kwargs)
+		print(handler)
 		query = update.callback_query
+		user_data = context.user_data
 		if query and query.data:
-			action_name, decoded_args = decode_callback_data(query.data)
-			args.update(decoded_args or {})
-
-		if expects_args:
-			result = handler(update, context, args)
+			action_name = query.data
+			kwargs = user_data.pop(action_name, {})
 		else:
-			result = handler(update, context)
+			kwargs = {}
+
+		# try
+		result = handler(update, context, **kwargs)
 
 		if hasattr(result, '__aiter__'):
 			async for screen in result:
@@ -111,7 +124,7 @@ def command(name: str) -> Callable:
 
 	def decorator(handler: Callable) -> Callable:
 		router = Router()
-		router.register_command(name, _wrap_handler(handler, expects_args=False))
+		router.register_command(name, _wrap_handler(handler))
 		return handler
 
 	return decorator
@@ -126,7 +139,7 @@ def callback(query: str) -> Callable:
 
 	def decorator(handler: Callable) -> Callable:
 		router = Router()
-		router.register_callback(query, _wrap_handler(handler, expects_args=True))
+		router.register_callback(query, _wrap_handler(handler))
 		return handler
 
 	return decorator

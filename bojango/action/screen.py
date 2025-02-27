@@ -20,7 +20,7 @@ class ScreenType(Enum):
 
 class ActionButton:
   """Класс для управления кнопками экрана."""
-  def __init__(self, text: str | LateValue, action_name: str | None = None, url: str | None = None, args: dict[str, Any] | None = None):
+  def __init__(self, text: str | LateValue, action_name: str | None = None, url: str | None = None, **kwargs):
     """
     :param text: Текст кнопки или LateValue для локализации.
     :param action_name: Название действия, которое вызовет кнопка.
@@ -29,7 +29,7 @@ class ActionButton:
     self.text = text
     self.url = url
     self.action_name = action_name
-    self.args = args
+    self.kwargs = kwargs
 
     if self.action_name is None and self.url is None:
       raise ValueError('You must specify either action_name or url')
@@ -73,7 +73,7 @@ class ActionScreen:
     :param update: Объект Update Telegram.
     :param context: Объект Context Telegram.
     """
-    keyboard = self.generate_keyboard()
+    keyboard = self.generate_keyboard(context)
     text = self.resolve_text(self.text)
     query = update.callback_query
     chat_id = update.effective_chat.id
@@ -126,7 +126,7 @@ class ActionScreen:
       logger.error(f'Screen render error: {e}')
       raise
 
-  def generate_keyboard(self) -> InlineKeyboardMarkup:
+  def generate_keyboard(self, context: ContextTypes.DEFAULT_TYPE) -> InlineKeyboardMarkup:
     """
     Создает клавиатуру из кнопок.
 
@@ -134,14 +134,26 @@ class ActionScreen:
     """
     keyboard = []
     for row in self.buttons:
-      keyboard.append([
-        InlineKeyboardButton(
-          text=self.resolve_text(button.text),
-          url=button.url if button.url else None,
-          callback_data=encode_callback_data(button.action_name, button.args) if not button.url else None,
-        )
-        for button in row
-      ])
+      buttons_row = []
+
+      for button in row:
+        if button.url:
+          buttons_row.append(
+            InlineKeyboardButton(
+              text=self.resolve_text(button.text),
+              url=button.url,
+            )
+          )
+        else:
+          context.user_data[button.action_name] = button.kwargs or {}
+          buttons_row.append(
+            InlineKeyboardButton(
+              text=self.resolve_text(button.text),
+              callback_data=button.action_name,
+            )
+          )
+
+      keyboard.append(buttons_row)
     logger.debug('Keyboard generated successfully.')
     return InlineKeyboardMarkup(keyboard)
 
@@ -152,7 +164,7 @@ class ActionScreen:
     :param chat_id: ID чата, куда нужно отправить экран.
     :param context: Контекст Telegram для выполнения отправки.
     """
-    keyboard = self.generate_keyboard()
+    keyboard = self.generate_keyboard(context)
     text = self.resolve_text(self.text)
 
     try:
