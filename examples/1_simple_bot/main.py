@@ -1,7 +1,12 @@
 from bojango.core.bot import BojangoBotConfig, BojangoBot
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
+
 config = BojangoBotConfig(
-	api_token='990608607:AAESo023jTDMKDkBHbxpU0DuiXDAsYVx1oE',
+	api_token=os.getenv('YOUR_TELEGRAM_API_TOKEN'),
 	handlers_modules=[
 		'handlers'
 	]
