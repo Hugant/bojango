@@ -5,12 +5,15 @@ from telegram.ext import Application, CommandHandler, CallbackQueryHandler, Cont
 
 from bojango.action.manager import ActionManager
 from bojango.action.screen import ActionScreen
-from bojango.core.utils import decode_callback_data
+from bojango.core.utils import decode_callback_data, pop_user_data_kwargs
 
 
 class Router:
 	"""Класс маршрутизации для обработки команд и callback запросов."""
 
+	# Ограничения телеграмма в длину callback_data 64 символа, также берем qid, при формировании кнопок ?qid=25042272,
+	# в итоге максимальная длина callback действия 51, и 1 на запас
+	MAX_QUERY_LENGTH: int = 50
 	_instance: Self | None = None
 
 	def __new__(cls, action_manager: ActionManager | None = None) -> Self:
@@ -78,28 +81,7 @@ def _wrap_handler(handler: Callable) -> Callable:
 		:param context: Контекст.
 		:param args: Дополнительные аргументы.
 		"""
-		# args = args or {}
-		#
-		# query = update.callback_query
-		# if query and query.data:
-		# 	action_name, decoded_args = decode_callback_data(query.data)
-		# 	args.update(decoded_args or {})
-		#
-		# if expects_args:
-		# 	result = handler(update, context, args)
-		# else:
-		# 	result = handler(update, context)
-		print(context.user_data)
-		print(kwargs)
-		print(handler)
-		query = update.callback_query
-		user_data = context.user_data
-		if query and query.data:
-			action_name = query.data
-			kwargs = user_data.pop(action_name, {})
-		else:
-			kwargs = {}
-
+		kwargs = pop_user_data_kwargs(update.callback_query, context.user_data)
 		# try
 		result = handler(update, context, **kwargs)
 
@@ -136,6 +118,10 @@ def callback(query: str) -> Callable:
   :param query: Шаблон callback.
   :return: Обёрнутый обработчик.
   """
+
+	if len(query) > Router.MAX_QUERY_LENGTH:
+		raise ValueError(f'Callback name "{query}" is too long ({len(query)} chars). '
+										 f'Max length: {Router.MAX_QUERY_LENGTH}.')
 
 	def decorator(handler: Callable) -> Callable:
 		router = Router()

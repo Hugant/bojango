@@ -30,6 +30,7 @@ class ActionButton:
     self.url = url
     self.action_name = action_name
     self.kwargs = kwargs
+    self.query_id = str(abs(hash(id(self))) % 10**8)
 
     if self.action_name is None and self.url is None:
       raise ValueError('You must specify either action_name or url')
@@ -145,11 +146,11 @@ class ActionScreen:
             )
           )
         else:
-          context.user_data[button.action_name] = button.kwargs or {}
+          context.user_data[button.query_id] = button.kwargs or {}
           buttons_row.append(
             InlineKeyboardButton(
               text=self.resolve_text(button.text),
-              callback_data=button.action_name,
+              callback_data=encode_callback_data(button.action_name, {'qid': button.query_id}),
             )
           )
 

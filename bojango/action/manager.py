@@ -4,8 +4,7 @@ from telegram.ext import ContextTypes
 import logging
 
 from bojango.action.screen import ActionScreen
-from bojango.core.utils import decode_callback_data
-
+from bojango.core.utils import decode_callback_data, pop_user_data_kwargs
 
 logger = logging.getLogger(__name__)
 
@@ -131,15 +130,8 @@ class ActionManager:
     data = {}
     logger.debug(f'Handling action: {name} with data: {data}')
     try:
-      query = update.callback_query
-      user_data = context.user_data
-      if query and query.data:
-        action_name = query.data
-        args = user_data.pop(action_name, {})
-      else:
-        args = {}
-
-      await ActionManager().execute_action(name, update, context, **args)
+      kwargs = pop_user_data_kwargs(update.callback_query, context.user_data)
+      await ActionManager().execute_action(name, update, context, **kwargs)
     except Exception as e:
       logger.exception(f'Error handling action "{name}": {e}')
 

@@ -2,6 +2,8 @@ import urllib.parse
 from typing import Any, Dict, Tuple
 import logging
 
+from telegram import CallbackQuery
+from telegram.ext import ContextTypes
 
 logger = logging.getLogger(__name__)
 
@@ -39,3 +41,10 @@ def decode_callback_data(callback_data: str) -> Tuple[str, Dict[str, Any] | None
 
   logger.debug(f'Decoded action name: "{callback_data}", no args found.')
   return callback_data, None
+
+
+def pop_user_data_kwargs(query: CallbackQuery, user_data: ContextTypes.user_data) -> Dict[str, Any]:
+  if query and query.data:
+    action_name, query_args = decode_callback_data(query.data)
+    return user_data.pop(query_args.get('qid'), {})
+  return {}

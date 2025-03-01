@@ -40,7 +40,3 @@ async def step2_callback(update, context, name, age):
 			[ActionButton(text='На главную', action_name='start_screen')]
 		]
 	)
-
-
-	# TODO: Выводить ошибку что callback большой
-	# TODO: Решить проблему с вызовом одинаковых экранов в одной группе кнопок
