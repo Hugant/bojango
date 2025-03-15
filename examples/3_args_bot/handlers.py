@@ -16,9 +16,15 @@ async def start_screen_callback(update, context):
 		text='Добро пожаловать! Выберите действие:',
 		buttons=[
 			[ActionButton(text='Далее', action_name='next_step', step_name='Далее')],
-			[ActionButton(text='О нас', action_name='next_step', step_name='О нас')]
+			[ActionButton(text='О нас', action_name='next_step', step_name='О нас')],
+			[ActionButton(text='Промежуточный экран', action_name='slay')]
 		]
 	)
+
+
+@callback('slay')
+async def slay_callback(update, context):
+	await ActionManager.redirect('next_step', update, context, step_name='Через промежуточный')
 
 
 @callback('next_step')

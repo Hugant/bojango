@@ -50,7 +50,6 @@ class Action:
         screen = await result
         yield screen
     except TypeError as e:
-      print(e.args)
       raise TypeError(f'Executing action {self.name} required positional arguments: {e.args[0]}')
 
 
@@ -149,6 +148,7 @@ class ActionManager:
     logger.info('Redirecting to action: %s', action_name)
     action_manager: ActionManager = ActionManager()
     action = action_manager.get_action(action_name)
+    print(kwargs)
     # context.user_data[action.name] = kwargs
     async for screen in action.execute(update, context, **kwargs):
       if screen:
