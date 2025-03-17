@@ -89,7 +89,7 @@ class ActionScreen:
           text=text,
           reply_to_message_id=self.message_id
         )
-      if self.screen_type == ScreenType.NEW:
+      elif self.screen_type == ScreenType.NEW:
         await context.bot.send_message(
           chat_id=chat_id,
           text=text,
