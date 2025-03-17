@@ -80,4 +80,4 @@ class TelegramTextFormatter:
 
 		text = self._apply_replacements(text, self._post_replace)
 		self.logger.debug('Formatted text: %s', text)
-		return text
+		return text.strip()
