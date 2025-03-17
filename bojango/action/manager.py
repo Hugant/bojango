@@ -148,8 +148,8 @@ class ActionManager:
     logger.info('Redirecting to action: %s', action_name)
     action_manager: ActionManager = ActionManager()
     action = action_manager.get_action(action_name)
+    kwargs = {**pop_user_data_kwargs(update.callback_query, context.user_data), **kwargs}
     print(kwargs)
-    # context.user_data[action.name] = kwargs
     async for screen in action.execute(update, context, **kwargs):
       if screen:
         return screen

@@ -93,7 +93,7 @@ def _wrap_handler(handler: Callable) -> Callable:
 		:param context: Контекст.
 		:param args: Дополнительные аргументы.
 		"""
-		kwargs = pop_user_data_kwargs(update.callback_query, context.user_data)
+		kwargs = {**kwargs, **pop_user_data_kwargs(update.callback_query, context.user_data)}
 		# try
 		result = handler(update, context, **kwargs)
 

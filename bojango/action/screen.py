@@ -16,6 +16,7 @@ class ScreenType(Enum):
   REPLACE = 'replace'  # Заменить текст и клавиатуру существующего сообщения
   REMOVE_KEYBOARD = 'remove_keyboard'  # Удалить клавиатуру из сообщения
   EDIT = 'edit'  # Редактировать сообщение без клавиатуры
+  REPLY = 'reply'  # Ответить на сообщение
 
 
 class ActionButton:
@@ -82,6 +83,12 @@ class ActionScreen:
     logger.info(f'Rendering screen: {self.screen_type}, Chat ID: {chat_id}')
 
     try:
+      if self.screen_type == ScreenType.REPLY:
+        await context.bot.send_message(
+          chat_id=chat_id,
+          text=text,
+          reply_to_message_id=self.message_id
+        )
       if self.screen_type == ScreenType.NEW:
         await context.bot.send_message(
           chat_id=chat_id,
