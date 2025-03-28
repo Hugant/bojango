@@ -46,10 +46,8 @@ class TelegramTextFormatter:
 	def _balance_literals(self, text: str) -> str:
 		"""Проверяет сбалансированность литералов и добавляет недостающие."""
 		for open_literal, close_literal in self._literals:
-			temp_text = self._apply_replacements(text, self._post_replace)
-			amount_open = temp_text.count(open_literal)
-			amount_close = temp_text.count(close_literal)
-
+			amount_open = text.count(open_literal)
+			amount_close = text.count(close_literal)
 			if open_literal == close_literal:
 				if amount_open % 2 != 0:
 					text += close_literal
