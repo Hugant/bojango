@@ -80,6 +80,8 @@ class ActionScreen:
     query = update.callback_query
     chat_id = update.effective_chat.id
 
+    parse_mode = 'markdown'
+
     logger.info(f'Rendering screen: {self.screen_type}, Chat ID: {chat_id}')
 
     try:
@@ -87,21 +89,22 @@ class ActionScreen:
         await context.bot.send_message(
           chat_id=chat_id,
           text=text,
-          reply_to_message_id=self.message_id
+          reply_to_message_id=self.message_id,
+          parse_mode=parse_mode,
         )
       elif self.screen_type == ScreenType.NEW:
         await context.bot.send_message(
           chat_id=chat_id,
           text=text,
           reply_markup=keyboard,
-          parse_mode='markdown'
+          parse_mode=parse_mode
         )
       elif self.screen_type == ScreenType.REPLACE and not query:
         await context.bot.send_message(
           chat_id=chat_id,
           text=text,
           reply_markup=keyboard,
-          parse_mode='markdown'
+          parse_mode=parse_mode
         )
       elif self.screen_type == ScreenType.REPLACE and query:
         await context.bot.edit_message_text(
@@ -109,20 +112,21 @@ class ActionScreen:
           message_id=query.message.message_id,
           text=text,
           reply_markup=keyboard,
-          parse_mode='markdown'
+          parse_mode=parse_mode
         )
       elif self.screen_type == ScreenType.REMOVE_KEYBOARD and query:
         await context.bot.edit_message_reply_markup(
           chat_id=chat_id,
           message_id=query.message.message_id,
-          reply_markup=InlineKeyboardMarkup([])
+          reply_markup=InlineKeyboardMarkup([]),
+          parse_mode=parse_mode
         )
       elif self.screen_type == ScreenType.EDIT and query:
         await context.bot.edit_message_text(
           chat_id=chat_id,
           message_id=query.message.message_id,
           text=text,
-          parse_mode='markdown'
+          parse_mode=parse_mode
         )
       else:
         logger.error('Unsupported ScreenType or missing query.')

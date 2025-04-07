@@ -149,7 +149,6 @@ class ActionManager:
     action_manager: ActionManager = ActionManager()
     action = action_manager.get_action(action_name)
     kwargs = {**pop_user_data_kwargs(update.callback_query, context.user_data), **kwargs}
-    print(kwargs)
     async for screen in action.execute(update, context, **kwargs):
       if screen:
         return screen

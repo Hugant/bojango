@@ -37,6 +37,26 @@ class TelegramTextFormatter:
 		self._post_replace.append((old, new))
 		self.logger.debug('Added post-replace: %s -> %s', old, new)
 
+	def _restore_in_code_blocks(self, text: str):
+		"""
+			Возвращает маркеры (например, &&b) обратно в спецсимволы внутри блоков ```...```,
+			чтобы они не экранировались Telegram.
+		"""
+		print('-----------')
+		print(text)
+		print('-----------')
+		def replacer(match):
+			print(match)
+			block = match.group(0)
+			for old, new in self._pre_replace:
+				block = block.replace(new, old)
+			print('---blcok')
+			print(block)
+			return block
+
+		return re.sub(r'&&q&&q&&q.*?&&q&&q&&q', replacer, text, flags=re.DOTALL)
+
+
 	def _apply_replacements(self, text: str, replacements: List[Tuple[str, str]]) -> str:
 		"""Применяет замены к тексту."""
 		for old, new in replacements:
@@ -75,6 +95,8 @@ class TelegramTextFormatter:
 
 		for pattern in self._ignore_patterns:
 			text = re.sub(pattern, '', text)
+
+		text = self._restore_in_code_blocks(text)
 
 		text = self._apply_replacements(text, self._post_replace)
 		self.logger.debug('Formatted text: %s', text)
