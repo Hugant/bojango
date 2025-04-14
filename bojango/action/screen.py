@@ -1,6 +1,6 @@
 import logging
 from enum import Enum
-from typing import Any
+from typing import Any, Union
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import ContextTypes
 from bojango.core.utils import encode_callback_data
@@ -41,7 +41,9 @@ class ActionScreen:
   """Класс для управления экранами действий."""
   def __init__(
     self,
-    text: str | LateValue,
+    text: str | LateValue | None,
+    image: str | bytes | None = None,
+    file: str | bytes | None = None,
     buttons: list[list[ActionButton]] | None = None,
     screen_type: ScreenType = ScreenType.REPLACE,
     message_id: int | None = None
@@ -52,7 +54,13 @@ class ActionScreen:
     :param screen_type: Тип экрана (ScreenType).
     :param message_id: ID сообщения для редактирования, если применимо.
     """
+
+    if text is None and file is None and image is None:
+      raise ValueError('You must specify either text, image or file')
+
     self.text = text
+    self.image = image
+    self.file = file
     self.buttons = buttons or []
     self.screen_type = screen_type
     self.message_id = message_id
@@ -85,6 +93,26 @@ class ActionScreen:
     logger.info(f'Rendering screen: {self.screen_type}, Chat ID: {chat_id}')
 
     try:
+      if self.file:
+        await context.bot.send_chat_action(chat_id=chat_id, action=ChatAction.UPLOAD_DOCUMENT)
+        await context.bot.send_document(
+          chat_id=chat_id,
+          document=self.file,
+          caption=text,
+          reply_markup=keyboard,
+          parse_mode=parse_mode
+        )
+      elif self.image:
+        await context.bot.send_chat_action(chat_id=chat_id, action=ChatAction.UPLOAD_PHOTO)
+        await context.bot.send_photo(
+          chat_id=chat_id,
+          photo=self.image,
+          caption=text,
+          reply_markup=keyboard,
+          parse_mode=parse_mode
+        )
+
+
       if self.screen_type == ScreenType.REPLY:
         await context.bot.send_message(
           chat_id=chat_id,
