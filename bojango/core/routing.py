@@ -1,3 +1,4 @@
+import re
 from typing import Callable, Self
 
 from telegram import Update
@@ -5,7 +6,7 @@ from telegram.ext import Application, CommandHandler, CallbackQueryHandler, Cont
 
 from bojango.action.manager import ActionManager
 from bojango.action.screen import ActionScreen
-from bojango.core.utils import decode_callback_data, pop_user_data_kwargs
+from bojango.core.utils import pop_user_data_kwargs
 
 
 class Router:
@@ -75,7 +76,8 @@ class Router:
 		for command, handler in self._commands.items():
 			application.add_handler(CommandHandler(command, handler))
 		for query, handler in self._callbacks.items():
-			application.add_handler(CallbackQueryHandler(handler, pattern=f'{query}'))
+			print(query)
+			application.add_handler(CallbackQueryHandler(handler, pattern=f'^{re.escape(query)}(?:\\?|$)'))
 
 		for pattern, handler in self._message_handlers:
 			application.add_handler(MessageHandler(filters.TEXT & filters.Regex(pattern), handler))

@@ -1,10 +1,10 @@
-from typing import Callable, AsyncIterable, Dict, Any
+from typing import Callable, AsyncIterable
 from telegram import Update
 from telegram.ext import ContextTypes
 import logging
 
 from bojango.action.screen import ActionScreen
-from bojango.core.utils import decode_callback_data, pop_user_data_kwargs
+from bojango.core.utils import pop_user_data_kwargs
 
 logger = logging.getLogger(__name__)
 

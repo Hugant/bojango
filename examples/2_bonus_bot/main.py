@@ -1,7 +1,13 @@
+import os
+
+from dotenv import load_dotenv
+
 from bojango.core.bot import BojangoBotConfig, BojangoBot
 
+load_dotenv()
+
 config = BojangoBotConfig(
-	api_token='YOUR_TELEGRAM_API_TOKEN',
+	api_token=os.getenv('YOUR_TELEGRAM_API_TOKEN'),
 	handlers_modules=[
 		'handlers'
 	]

@@ -1,8 +1,8 @@
 import logging
 from enum import Enum
-from typing import Any, Union
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import ContextTypes
+
 from bojango.core.utils import encode_callback_data
 from bojango.utils.localization import LateValue
 
@@ -15,7 +15,6 @@ class ScreenType(Enum):
   NEW = 'new'  # Создать новое сообщение
   REPLACE = 'replace'  # Заменить текст и клавиатуру существующего сообщения
   REMOVE_KEYBOARD = 'remove_keyboard'  # Удалить клавиатуру из сообщения
-  EDIT = 'edit'  # Редактировать сообщение без клавиатуры
   REPLY = 'reply'  # Ответить на сообщение
 
 
@@ -41,7 +40,7 @@ class ActionScreen:
   """Класс для управления экранами действий."""
   def __init__(
     self,
-    text: str | LateValue | None,
+    text: str | LateValue | None = None,
     image: str | bytes | None = None,
     file: str | bytes | None = None,
     buttons: list[list[ActionButton]] | None = None,
@@ -58,12 +57,40 @@ class ActionScreen:
     if text is None and file is None and image is None:
       raise ValueError('You must specify either text, image or file')
 
+    if image and file:
+      raise ValueError('Cannot attach both image and file to a single message.')
+
     self.text = text
     self.image = image
     self.file = file
     self.buttons = buttons or []
     self.screen_type = screen_type
     self.message_id = message_id
+
+  async def render(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """
+    Отображает экран в зависимости от его типа.
+
+    :param update: Объект Update Telegram.
+    :param context: Объект Context Telegram.
+    """
+
+    from bojango.action.content_strategy import BaseContentStrategy
+    from bojango.action.message_behavior import BaseScreenBehavior
+
+    behavior = BaseScreenBehavior.resolve_behavior(self.screen_type)
+    strategy = BaseContentStrategy.resolve_strategy(self)
+
+    logger.info(f'Rendering screen: {self.screen_type}, Chat ID: {update.effective_chat.id}')
+
+    try:
+      await behavior.render(screen=self, update=update, context=context, strategy=strategy)
+
+      if update.callback_query:
+        await update.callback_query.answer()
+    except Exception as e:
+      logger.error(f'Screen render error: {e}')
+      raise
 
   def resolve_text(self, text: str | LateValue) -> str:
     """
@@ -75,96 +102,6 @@ class ActionScreen:
     resolved_text = text.value if isinstance(text, LateValue) else text
     logger.debug(f'Text resolved: {resolved_text}')
     return resolved_text
-
-  async def render(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """
-    Отображает экран в зависимости от его типа.
-
-    :param update: Объект Update Telegram.
-    :param context: Объект Context Telegram.
-    """
-    keyboard = self.generate_keyboard(context)
-    text = self.resolve_text(self.text)
-    query = update.callback_query
-    chat_id = update.effective_chat.id
-
-    parse_mode = 'markdown'
-
-    logger.info(f'Rendering screen: {self.screen_type}, Chat ID: {chat_id}')
-
-    try:
-      if self.file:
-        await context.bot.send_chat_action(chat_id=chat_id, action=ChatAction.UPLOAD_DOCUMENT)
-        await context.bot.send_document(
-          chat_id=chat_id,
-          document=self.file,
-          caption=text,
-          reply_markup=keyboard,
-          parse_mode=parse_mode
-        )
-      elif self.image:
-        await context.bot.send_chat_action(chat_id=chat_id, action=ChatAction.UPLOAD_PHOTO)
-        await context.bot.send_photo(
-          chat_id=chat_id,
-          photo=self.image,
-          caption=text,
-          reply_markup=keyboard,
-          parse_mode=parse_mode
-        )
-
-
-      if self.screen_type == ScreenType.REPLY:
-        await context.bot.send_message(
-          chat_id=chat_id,
-          text=text,
-          reply_to_message_id=self.message_id,
-          parse_mode=parse_mode,
-        )
-      elif self.screen_type == ScreenType.NEW:
-        await context.bot.send_message(
-          chat_id=chat_id,
-          text=text,
-          reply_markup=keyboard,
-          parse_mode=parse_mode
-        )
-      elif self.screen_type == ScreenType.REPLACE and not query:
-        await context.bot.send_message(
-          chat_id=chat_id,
-          text=text,
-          reply_markup=keyboard,
-          parse_mode=parse_mode
-        )
-      elif self.screen_type == ScreenType.REPLACE and query:
-        await context.bot.edit_message_text(
-          chat_id=chat_id,
-          message_id=query.message.message_id,
-          text=text,
-          reply_markup=keyboard,
-          parse_mode=parse_mode
-        )
-      elif self.screen_type == ScreenType.REMOVE_KEYBOARD and query:
-        await context.bot.edit_message_reply_markup(
-          chat_id=chat_id,
-          message_id=query.message.message_id,
-          reply_markup=InlineKeyboardMarkup([]),
-          parse_mode=parse_mode
-        )
-      elif self.screen_type == ScreenType.EDIT and query:
-        await context.bot.edit_message_text(
-          chat_id=chat_id,
-          message_id=query.message.message_id,
-          text=text,
-          parse_mode=parse_mode
-        )
-      else:
-        logger.error('Unsupported ScreenType or missing query.')
-        raise ValueError('Unsupported ScreenType or missing query.')
-
-      if query:
-        await query.answer()
-    except Exception as e:
-      logger.error(f'Screen render error: {e}')
-      raise
 
   def generate_keyboard(self, context: ContextTypes.DEFAULT_TYPE) -> InlineKeyboardMarkup:
     """
@@ -215,8 +152,6 @@ class ActionScreen:
           reply_markup=keyboard,
           parse_mode='markdown'
         )
-      elif self.screen_type == ScreenType.EDIT:
-        raise ValueError('EDIT screen type is not supported in send_to_chat.')
       else:
         raise ValueError('Only NEW screen type is supported for send_to_chat.')
     except Exception as e:

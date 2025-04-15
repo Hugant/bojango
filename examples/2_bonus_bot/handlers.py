@@ -11,7 +11,7 @@ async def start_command(update, context):
 
 # Стартовый экран
 @callback("s_start")
-async def s_start(update, context, args):
+async def s_start(update, context):
 	yield ActionScreen(
 		text="Добро пожаловать! Выберите действие:",
 		buttons=[
@@ -23,7 +23,7 @@ async def s_start(update, context, args):
 
 # Экран о нас
 @callback("s_about")
-async def s_about(update, context, args):
+async def s_about(update, context):
 	yield ActionScreen(
 		text="Мы очень крутая компания",
 		buttons=[
@@ -34,7 +34,7 @@ async def s_about(update, context, args):
 
 # Экран с акцией
 @callback("s_promo")
-async def s_promo(update, context, args):
+async def s_promo(update, context):
 	yield ActionScreen(
 		text="🔥 Специальная акция! Нажмите, чтобы проверить подписку.",
 		buttons=[
@@ -46,7 +46,7 @@ async def s_promo(update, context, args):
 
 # Проверка подписки и редирект
 @callback("l_is_channel_subscriber")
-async def check_subscription(update, context, args):
+async def check_subscription(update, context):
 		user_is_subscribed = True  # Здесь должна быть логика проверки подписки
 
 		if user_is_subscribed:
@@ -57,7 +57,7 @@ async def check_subscription(update, context, args):
 
 # Успешное получение акции
 @callback("promo_success")
-async def promo_success(update, context, args):
+async def promo_success(update, context):
 		yield ActionScreen(
 				text="🎉 Поздравляем! Вы подписаны и получаете бонус.",
 				buttons=[[ActionButton(text="На главную", action_name="s_start")]]
@@ -66,7 +66,7 @@ async def promo_success(update, context, args):
 
 # Ошибка подписки
 @callback("promo_fail")
-async def promo_fail(update, context, args):
+async def promo_fail(update, context):
 		yield ActionScreen(
 				text="❌ Вы не подписаны. Подпишитесь на канал и попробуйте снова.",
 				buttons=[[ActionButton(text="Назад", action_name="s_promo")]]

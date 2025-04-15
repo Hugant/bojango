@@ -4,7 +4,6 @@ from bojango.action.screen import ActionScreen, ActionButton, ScreenType
 from bojango.utils.format import TelegramTextFormatter
 
 
-# Обработчик команды /start
 @command('start')
 async def start_command(update, context):
 	await ActionManager.redirect('s_screen', update, context)
