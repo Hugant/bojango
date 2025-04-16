@@ -5,6 +5,8 @@ from bojango.core.bot import BojangoBotConfig, BojangoBot
 
 from dotenv import load_dotenv
 
+from bojango.utils.format import OpenaiFormatter
+
 load_dotenv()
 
 LOGGING_CONFIG = {
@@ -35,6 +37,7 @@ logger = logging.getLogger(__name__)
 
 config = BojangoBotConfig(
 	api_token=os.getenv('YOUR_TELEGRAM_API_TOKEN'),
+	formatter=OpenaiFormatter,
 	handlers_modules=[
 		'handlers'
 	]

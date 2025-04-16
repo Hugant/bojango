@@ -1,49 +1,11 @@
-from abc import abstractmethod, ABC
-from typing import Type, Callable
-
 from telegram import Update, InlineKeyboardMarkup
 from telegram.constants import ChatAction
 from telegram.ext import ContextTypes
 
-from bojango.action.content_strategy import BaseContentStrategy, ImageContentStrategy, FileContentStrategy, \
-  TextContentStrategy
+from bojango.action.behaviors.base import register_behavior, BaseScreenBehavior
 from bojango.action.screen import ScreenType, ActionScreen
-
-
-class BaseScreenBehavior(ABC):
-  BEHAVIORS: dict[ScreenType, Type['BaseScreenBehavior']] = {}
-
-  @staticmethod
-  def resolve_behavior(screen_type: ScreenType) -> 'BaseScreenBehavior':
-    behavior_cls = BaseScreenBehavior.BEHAVIORS.get(screen_type)
-
-    if behavior_cls is None:
-      raise ValueError(f'Behavior type {screen_type} not supported')
-
-    return behavior_cls()
-
-  @abstractmethod
-  async def render(
-    self,
-    screen: ActionScreen,
-    update: Update,
-    context: ContextTypes.DEFAULT_TYPE,
-    strategy: BaseContentStrategy
-  ) -> None:
-    raise NotImplementedError
-
-
-def register_behavior(screen_type: ScreenType) -> Callable[[Type[BaseScreenBehavior]], Type[BaseScreenBehavior]]:
-  """
-  Декоратор для регистрации поведения экрана.
-
-  :param screen_type: Тип экрана (ScreenType), для которого регистрируется поведение.
-  """
-  def decorator(cls: Type[BaseScreenBehavior]) -> Type[BaseScreenBehavior]:
-    BaseScreenBehavior.BEHAVIORS[screen_type] = cls
-    return cls
-
-  return decorator
+from bojango.action.strategies.base import BaseContentStrategy
+from bojango.action.strategies.content_strategies import ImageContentStrategy, FileContentStrategy, TextContentStrategy
 
 
 @register_behavior(ScreenType.NEW)

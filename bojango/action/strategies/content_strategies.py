@@ -1,50 +1,8 @@
-from __future__ import annotations
-
-from abc import ABC, abstractmethod
-from typing import Any
 from telegram import Update
-from telegram.constants import ChatAction
 from telegram.ext import ContextTypes
 
 from bojango.action.screen import ActionScreen
-
-
-class BaseContentStrategy(ABC):
-  """
-  Абстрактный класс стратегии генерации содержимого сообщения.
-  Каждая стратегия отвечает за подготовку параметров,
-  которые затем будут переданы в метод Telegram API (send_message, send_photo и т.д.).
-  """
-
-  PARSE_MODE = 'markdown'
-
-  @staticmethod
-  def resolve_strategy(screen: ActionScreen) -> 'BaseContentStrategy':
-    if screen.image:
-      return ImageContentStrategy()
-    elif screen.file:
-      return FileContentStrategy()
-    elif screen.text:
-      return TextContentStrategy()
-    else:
-      raise ValueError(f'No content strategy for this situation')
-
-  @abstractmethod
-  async def prepare(
-    self,
-    screen: ActionScreen,
-    update: Update,
-    context: ContextTypes.DEFAULT_TYPE
-  ) -> dict[str, Any]:
-    """
-    Подготавливает данные для отправки сообщения.
-
-    :param screen: Объект ActionScreen с параметрами.
-    :param update: Telegram Update.
-    :param context: Контекст Telegram.
-    :return: Словарь с параметрами для отправки (text, photo, file, reply_markup и т.д.)
-    """
-    pass
+from bojango.action.strategies.base import BaseContentStrategy
 
 
 class TextContentStrategy(BaseContentStrategy):
@@ -60,9 +18,9 @@ class TextContentStrategy(BaseContentStrategy):
   ) -> dict:
     return {
       'chat_id': update.effective_chat.id,
-      'text': screen.resolve_text(screen.text),
+      'text': self.format_text(screen.resolve_text(screen.text)),
       'reply_markup': screen.generate_keyboard(context),
-      'parse_mode': BaseContentStrategy.PARSE_MODE,
+      'parse_mode': BaseContentStrategy.get_parse_mode(),
     }
 
 
@@ -86,11 +44,11 @@ class ImageContentStrategy(BaseContentStrategy):
       'chat_id': update.effective_chat.id,
       'photo': photo,
       'reply_markup': screen.generate_keyboard(context),
-      'parse_mode': self.PARSE_MODE,
+      'parse_mode': BaseContentStrategy.get_parse_mode(),
     }
 
     if screen.text:
-      data['caption'] = screen.resolve_text(screen.text)
+      data['caption'] = self.format_text(screen.resolve_text(screen.text))
 
     return data
 
@@ -115,10 +73,10 @@ class FileContentStrategy(BaseContentStrategy):
       'chat_id': update.effective_chat.id,
       'document': document,
       'reply_markup': screen.generate_keyboard(context),
-      'parse_mode': self.PARSE_MODE,
+      'parse_mode': BaseContentStrategy.get_parse_mode(),
     }
 
     if screen.text:
-      data['caption'] = screen.resolve_text(screen.text)
+      data['caption'] = self.format_text(screen.resolve_text(screen.text))
 
     return data

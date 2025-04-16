@@ -4,7 +4,7 @@ from typing import Callable, Self
 from telegram import Update
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes, MessageHandler, filters
 
-from bojango.action.manager import ActionManager
+from bojango.action.dispatcher import ActionManager
 from bojango.action.screen import ActionScreen
 from bojango.core.utils import pop_user_data_kwargs
 

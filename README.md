@@ -61,11 +61,14 @@ python bot.py
 действия по имени, а также выполнять их с передачей аргументов.
 
 Пример регистрации и выполнения действия:
+
 ```python
-from bojango.action.manager import ActionManager
+from bojango.action.dispatcher import ActionManager
+
 
 async def my_action(update, context, args):
-    await update.message.reply_text('Привет! Это кастомное действие.')
+	await update.message.reply_text('Привет! Это кастомное действие.')
+
 
 manager = ActionManager()
 manager.register_action('custom_action', my_action)
@@ -209,19 +212,21 @@ async def hello_handler(update, context):
 ```python
 from bojango.core.routing import callback, message
 
-from bojango.action.manager import ActionManager
+from bojango.action.dispatcher import ActionManager
 from bojango.action.screen import ActionScreen
+
 
 @callback('start_screen')
 async def start_screen(update, context, args):
-  yield ActionScreen(text='Это приветственный экран')
+	yield ActionScreen(text='Это приветственный экран')
+
 
 @message
 async def check_numbers(update, context, args):
-    if update.message.text.lower() == 'Привет':
-        await ActionManager.redirect('start_screen', update, context)
-    else:
-        yield ActionScreen(text=f'Вы написали: {update.message.text}')
+	if update.message.text.lower() == 'Привет':
+		await ActionManager.redirect('start_screen', update, context)
+	else:
+		yield ActionScreen(text=f'Вы написали: {update.message.text}')
 ```
 
 Редирект возможен только на функции, обернутые декоратором `@callback`. 

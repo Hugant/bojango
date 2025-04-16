@@ -74,9 +74,8 @@ class ActionScreen:
     :param update: Объект Update Telegram.
     :param context: Объект Context Telegram.
     """
-
-    from bojango.action.content_strategy import BaseContentStrategy
-    from bojango.action.message_behavior import BaseScreenBehavior
+    from bojango.action.behaviors.base import BaseScreenBehavior
+    from bojango.action.strategies.base import BaseContentStrategy
 
     behavior = BaseScreenBehavior.resolve_behavior(self.screen_type)
     strategy = BaseContentStrategy.resolve_strategy(self)

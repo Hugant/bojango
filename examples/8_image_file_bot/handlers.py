@@ -1,7 +1,7 @@
-from bojango.action.manager import ActionManager
+from bojango.action.dispatcher import ActionManager
 from bojango.core.routing import command, callback, message, audio, video_note
 from bojango.action.screen import ActionScreen, ActionButton, ScreenType
-from bojango.utils.format import TelegramTextFormatter
+from bojango.utils.formatter import TelegramTextFormatter
 
 
 @command('start')

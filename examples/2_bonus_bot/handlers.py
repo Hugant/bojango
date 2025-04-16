@@ -1,4 +1,4 @@
-from bojango.action.manager import ActionManager
+from bojango.action.dispatcher import ActionManager
 from bojango.action.screen import ActionScreen, ActionButton
 from bojango.core.routing import command, callback
 
