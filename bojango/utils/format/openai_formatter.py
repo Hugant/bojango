@@ -10,66 +10,31 @@ class OpenaiFormatter(BaseFormatter):
 	"""
 	_parse_mode = ParseMode.MARKDOWNV2
 
-	RESERVED_CHARS = r'_*\[\]()~`>#+=|{}.!-'
+	RESERVED_CHARS = r'\[\]()+=|{}.!-'
+	# RESERVED_CHARS = r'_*\[\]()~`>#+=|{}.!-'
 
 	def format(self, text: str) -> str:
-		# Экранируем все специальные символы MarkdownV2
-		def escape_md_v2(s: str) -> str:
-			return re.sub(r'([_*\[\]()~`>#+\-=|{}.!\\])', r'\\\1', s)
-
-		# 1. Сохраняем кодовые блоки ```
-		code_blocks = {}
-
-		def replace_code_block(match):
-			key = f"@@CODEBLOCK_{len(code_blocks)}@@"
-			code_blocks[key] = f"```{match.group(1)}```"
+		def link_replacer(match):
+			key = f"@@LINK{len(links)}@@"
+			links[key] = match.group(0)
 			return key
 
-		text = re.sub(r"```(.*?)```", replace_code_block, text, flags=re.DOTALL)
 
-		# 2. Сохраняем инлайн-код `...`
-		inline_codes = {}
+		text = re.sub(r'(?<!\*)\*(?!\*)', '@@STAR@@', text)
+		text = re.sub(r'\*\*(.+?)\*\*', r'@@BOLD@@\1@@BOLD@@', text)
+		text = re.sub(r'(?<!\*)\*(?!\*)', '@@STAR@@', text)
 
-		def replace_inline_code(match):
-			key = f"@@INLINE_{len(inline_codes)}@@"
-			inline_codes[key] = f"`{match.group(1)}`"
-			return key
-
-		text = re.sub(r"`([^`\n]+)`", replace_inline_code, text)
-
-		# 3. Сохраняем ссылки
 		links = {}
+		text = re.sub(r'\[([^\]]+)\]\(([^)]+)\)', link_replacer, text)
 
-		def replace_links(match):
-			key = f"@@LINK_{len(links)}@@"
-			label = escape_md_v2(match.group(1))
-			url = match.group(2)
-			links[key] = f"[{label}]({url})"
-			return key
+		text = re.sub(f'([{re.escape(OpenaiFormatter.RESERVED_CHARS)}])', r'\\\1', text)
 
-		text = re.sub(r'\[([^\]]+)]\(([^)]+)\)', replace_links, text)
+		for key, original in links.items():
+			text = text.replace(key, original)
 
-		# 4. Жирный текст: **text**
-		text = re.sub(r'\*\*([^\*]+)\*\*', lambda m: f"*{escape_md_v2(m.group(1))}*", text)
-
-		# 5. Курсив: *text*
-		# text = re.sub(r'\*([^\*]+)\*', lambda m: f"_{escape_md_v2(m.group(1))}_", text)
-
-		# 6. Подчёркивание: __text__
-		text = re.sub(r'__([^_]+)__', lambda m: f"_{escape_md_v2(m.group(1))}_", text)
-
-		# 7. Перечёркнутый текст: ~~text~~
-		text = re.sub(r'~~([^~]+)~~', lambda m: f"~{escape_md_v2(m.group(1))}~", text)
-
-		# 8. Спойлер: ||text||
-		text = re.sub(r'\|\|([^|]+)\|\|', lambda m: f"||{escape_md_v2(m.group(1))}||", text)
-
-		# Экранируем оставшийся текст (который вне форматирования)
-		# text = escape_md_v2(text)
-
-		# Восстанавливаем вставки
-		for key, val in {**code_blocks, **inline_codes, **links}.items():
-			text = text.replace(escape_md_v2(key), val)
-
+		text = text.replace('#', '')
+		text = text.replace('@@STAR@@', '\*')
+		text = text.replace('@@BOLD@@', '*')
+		# #
 		print(text)
 		return text
