@@ -10,7 +10,7 @@ class OpenaiFormatter(BaseFormatter):
 	"""
 	_parse_mode = ParseMode.MARKDOWNV2
 
-	RESERVED_CHARS = r'\[\]()+=|{}.!-'
+	RESERVED_CHARS = r'_\[\]()+=|{}.!-~'
 	# RESERVED_CHARS = r'_*\[\]()~`>#+=|{}.!-'
 
 	def format(self, text: str) -> str:
