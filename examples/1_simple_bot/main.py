@@ -1,3 +1,5 @@
+import os
+
 from bojango.core.bot import BojangoBotConfig, BojangoBot
 
 from dotenv import load_dotenv

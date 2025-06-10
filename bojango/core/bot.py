@@ -2,13 +2,15 @@ import asyncio
 import importlib
 import logging
 from dataclasses import dataclass, field
-from typing import Optional, List, Self
+from typing import Optional, List, Self, Type
 
 from telegram import Message
 from telegram.ext import ApplicationBuilder, Application
 
-from bojango.action.manager import ActionManager
+from bojango.action.dispatcher import ActionManager
+from bojango.action.strategies import BaseContentStrategy
 from bojango.core.routing import Router
+from bojango.utils.format import BaseFormatter, NoFormatter
 from bojango.utils.localization import BaseLocalizer
 
 
@@ -19,6 +21,7 @@ class BojangoBotConfig:
   handlers_modules: List[str]
   localizer: Optional[BaseLocalizer] = None
   base_url: Optional[str] = None
+  formatter: Optional[Type['BaseFormatter']] = NoFormatter
 
 
 class BojangoBot:
@@ -56,6 +59,8 @@ class BojangoBot:
     self._load_handlers()
     self.__app.bot_data['action_manager'] = self.action_manager
     self.router.attach_to_application(self.__app)
+
+    BaseContentStrategy.set_formatter(self.config.formatter())
 
     BojangoBot._instance = self
 

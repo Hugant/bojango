@@ -1,28 +1,13 @@
-from typing import Callable, AsyncIterable, Dict, Any
+from typing import Callable, AsyncIterable
 from telegram import Update
 from telegram.ext import ContextTypes
 import logging
 
+from bojango.action.exceptions import ActionAlreadyExistsError, UnknownActionError
 from bojango.action.screen import ActionScreen
-from bojango.core.utils import decode_callback_data, pop_user_data_kwargs
+from bojango.core.utils import pop_user_data_kwargs
 
 logger = logging.getLogger(__name__)
-
-
-class ActionAlreadyExistsError(Exception):
-  """Исключение, вызываемое при повторной регистрации действия."""
-  def __init__(self, action_name: str, message='Action already exists'):
-    message = f'{message}: "{action_name}"'
-    super().__init__(message)
-    self.action_name = action_name
-
-
-class UnknownActionError(Exception):
-  """Исключение, вызываемое при попытке вызвать неизвестное действие."""
-  def __init__(self, action_name: str, message='Unknown action'):
-    message = f'{message}: "{action_name}"'
-    super().__init__(message)
-    self.action_name = action_name
 
 
 class Action:

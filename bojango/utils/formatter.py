@@ -3,6 +3,10 @@ import logging
 from typing import List, Tuple
 
 
+
+
+
+
 class TelegramTextFormatter:
 	def __init__(self):
 		self._literals: List[Tuple[str, str]] = []
