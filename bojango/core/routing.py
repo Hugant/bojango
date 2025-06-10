@@ -312,5 +312,6 @@ def video_note() -> Callable:
 #
 # @redirect_command('s_lang')
 # async def c_lang(update, context): pass
+
 # ➡️ Это уменьшит дублирование, но добавит немного абстракции — только если хочешь чистоту.
 
