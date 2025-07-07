@@ -89,7 +89,7 @@ class ActionScreen:
         await update.callback_query.answer()
     except Exception as e:
       logger.error(f'Screen render error: {e}')
-      raise
+      # raise
 
   def resolve_text(self, text: str | LateValue) -> str:
     """

@@ -35,7 +35,7 @@ class BaseContentStrategy(ABC):
       return ImageContentStrategy()
     elif screen.file:
       return FileContentStrategy()
-    elif screen.text:
+    elif screen.text or (screen.text is not None and screen.text == ''):
       return TextContentStrategy()
     else:
       raise ValueError(f'No content strategy for this situation')
