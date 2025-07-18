@@ -62,5 +62,4 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
-
-#python -m examples.9_images_file_bot_input.main
+    

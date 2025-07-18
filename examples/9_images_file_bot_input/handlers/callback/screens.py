@@ -4,7 +4,7 @@ from bojango.action.screen import ActionScreen
 
 @callback('s_start')
 async def s_start(update, context):
-    yield ActionScreen(text=f'👋 Добро пожаловать')
+    yield ActionScreen(text='👋 Добро пожаловать')
 
 
 @callback('s_image')
