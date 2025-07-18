@@ -28,6 +28,7 @@ class Router:
 			cls._instance._message_handlers = []
 			cls._instance._audio_handler = None
 			cls._instance._video_note_handler = None
+			cls._instance._image_handler = None
 		return cls._instance
 
 	def register_command(self, command: str, handler: Callable) -> None:
@@ -62,11 +63,19 @@ class Router:
 
 	def register_video_note_handler(self, handler: Callable) -> None:
 		"""
-		Регистрирует обработчик аудио сообщений.
+		Регистрирует обработчик видео-заметок.
 
-		:param handler: Функция-обработчик аудио.
+		:param handler: Функция-обработчик видео-заметок.
 		"""
 		self._video_note_handler = handler
+
+	def register_image_handler(self, handler: Callable) -> None:
+		"""
+		Регистрирует обработчик сообщений с изображениями
+
+		:param handler: Функция-обработчик изображений
+		"""
+		self._image_handler = handler
 
 	def attach_to_application(self, application: Application) -> None:
 		"""Привязывает маршруты к Telegram Application.
@@ -87,6 +96,9 @@ class Router:
 
 		if self._video_note_handler:
 			application.add_handler(MessageHandler(filters.VIDEO_NOTE, self._video_note_handler))
+
+		if self._image_handler:
+			application.add_handler(MessageHandler(filters.PHOTO, self._image_handler))
 
 	def get_routes(self) -> dict[str, Callable]:
 		"""Возвращает все зарегистрированные маршруты.
@@ -172,6 +184,18 @@ def message(pattern: str = ".*") -> Callable:
 	return decorator
 
 
+def image() -> Callable:
+	"""
+	Декоратор для регистрации обработчика сообщений с изображениями
+	"""
+
+	def decorator(handler: Callable) -> Callable:
+		router = Router()
+		router.register_image_handler(handler)
+		return(handler)
+	
+	return decorator
+
 def audio() -> Callable:
 	"""
 	Декоратор для регистрации обработчика аудио сообщений.
@@ -187,7 +211,7 @@ def audio() -> Callable:
 
 def video_note() -> Callable:
 	"""
-	Декоратор для регистрации обработчика аудио сообщений.
+	Декоратор для регистрации обработчика видео-заметок.
 	"""
 
 	def decorator(handler: Callable) -> Callable:
