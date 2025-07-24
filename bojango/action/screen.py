@@ -4,6 +4,7 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import ContextTypes
 
 from bojango.core.utils import encode_callback_data
+from bojango.utils.format import NoFormatter, BaseFormatter
 from bojango.utils.localization import LateValue
 
 
@@ -45,7 +46,8 @@ class ActionScreen:
     file: str | bytes | None = None,
     buttons: list[list[ActionButton]] | None = None,
     screen_type: ScreenType = ScreenType.REPLACE,
-    message_id: int | None = None
+    message_id: int | None = None,
+    formatter: BaseFormatter = NoFormatter()
   ) -> None:
     """
     :param text: Текст сообщения или LateValue для локализации.
@@ -66,6 +68,7 @@ class ActionScreen:
     self.buttons = buttons or []
     self.screen_type = screen_type
     self.message_id = message_id
+    self.formatter = formatter
 
   async def render(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """

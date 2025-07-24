@@ -31,6 +31,9 @@ class BaseContentStrategy(ABC):
   def resolve_strategy(screen: ActionScreen) -> 'BaseContentStrategy':
     from bojango.action.strategies import ImageContentStrategy, FileContentStrategy, TextContentStrategy
 
+    if screen.formatter:
+      BaseContentStrategy.set_formatter(screen.formatter)
+
     if screen.image:
       return ImageContentStrategy()
     elif screen.file:
