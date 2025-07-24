@@ -1,5 +1,7 @@
+import asyncio
 from typing import Callable, AsyncIterable
 from telegram import Update
+from telegram.constants import ChatAction
 from telegram.ext import ContextTypes
 import logging
 
@@ -24,6 +26,10 @@ class Action:
   async def execute(self, update: Update, context: ContextTypes.DEFAULT_TYPE, **kwargs) -> \
   AsyncIterable[ActionScreen]:
     """Выполняет действие, возвращающее экраны."""
+
+    stop_event = asyncio.Event()
+    typing_task = asyncio.create_task(ActionManager.send_typing_action(update, context, stop_event))
+
     result = self.callback(update, context, **kwargs)
 
     logger.debug(f'Executing action: {self.name} with args: {kwargs}')
@@ -36,6 +42,9 @@ class Action:
         yield screen
     except TypeError as e:
       raise TypeError(f'Executing action {self.name} required positional arguments: {e.args[0]}')
+    finally:
+      stop_event.set()
+      await typing_task
 
 
 class ActionManager:
@@ -89,6 +98,7 @@ class ActionManager:
     """
     logger.info(f'Executing action: {name} with args: {kwargs}')
     action = self.get_action(name)
+
     try:
       async for screen in action.execute(update, context, **kwargs):
         if isinstance(screen, ActionScreen):
@@ -100,6 +110,17 @@ class ActionManager:
     except Exception as e:
       logger.exception(f'Error while executing action {name}: {e}')
       raise
+
+
+  @staticmethod
+  async def send_typing_action(update, context, stop_event):
+    print('trying to send typing action')
+    while not stop_event.is_set():
+      await context.bot.send_chat_action(chat_id=update.effective_chat.id, action=ChatAction.TYPING)
+      try:
+        await asyncio.wait_for(stop_event.wait(), timeout=4.5)
+      except asyncio.TimeoutError:
+        continue
 
   @staticmethod
   async def handle(name: str, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:

@@ -6,4 +6,5 @@ __all__ = [
   'ActionScreen',
   'ActionButton',
   'ActionManager',
+  'ScreenType'
 ]
