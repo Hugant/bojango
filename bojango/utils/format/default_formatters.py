@@ -12,6 +12,16 @@ class NoFormatter(BaseFormatter):
     return text
 
 
+class NoFormatterV2(BaseFormatter):
+  """
+    Передает текст как есть, использует MarkdownV2
+  """
+  _parse_mode = ParseMode.MARKDOWNV2
+
+  def format(self, text: str) -> str:
+    return text
+
+
 class MarkdownFormatter(BaseFormatter):
   """
   Экранирует символы для Markdown V1: _, *, [, ].
