@@ -114,6 +114,9 @@ class ReplaceScreenBehavior(BaseScreenBehavior):
       else:
         await context.bot.send_chat_action(chat_id=update.effective_chat.id, action=ChatAction.TYPING)
         await context.bot.edit_message_text(**data, message_id=message_id)
+    elif screen.message_id:
+      await context.bot.send_chat_action(chat_id=update.effective_chat.id, action=ChatAction.TYPING)
+      await context.bot.edit_message_text(**data, message_id=screen.message_id)
     else:
       await context.bot.send_chat_action(chat_id=update.effective_chat.id, action=ChatAction.TYPING)
       await context.bot.send_message(**data)
