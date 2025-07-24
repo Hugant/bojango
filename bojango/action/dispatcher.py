@@ -114,7 +114,6 @@ class ActionManager:
 
   @staticmethod
   async def send_typing_action(update, context, stop_event):
-    print('trying to send typing action')
     while not stop_event.is_set():
       await context.bot.send_chat_action(chat_id=update.effective_chat.id, action=ChatAction.TYPING)
       try:

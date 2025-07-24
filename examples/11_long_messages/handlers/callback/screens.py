@@ -15,5 +15,14 @@ async def s_start(update, context):
 
 @callback('s_second')
 async def s_second(update, context):
-	await asyncio.sleep(10)
+	await ActionManager.redirect('s_third', update, context)
+
+
+@callback('s_third')
+async def s_third(update, context):
+	await ActionManager.redirect('s_fourth', update, context)
+
+
+@callback('s_fourth')
+async def s_fourth(update, context):
 	yield ActionScreen(text='Okay, im ready')
