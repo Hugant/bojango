@@ -27,8 +27,7 @@ class Action:
   AsyncIterable[ActionScreen]:
     """Выполняет действие, возвращающее экраны."""
 
-    stop_event = asyncio.Event()
-    typing_task = asyncio.create_task(ActionManager.send_typing_action(update, context, stop_event))
+    await ActionManager.start_typing(update, context)
 
     result = self.callback(update, context, **kwargs)
 
@@ -43,13 +42,13 @@ class Action:
     except TypeError as e:
       raise TypeError(f'Executing action {self.name} required positional arguments: {e.args[0]}')
     finally:
-      stop_event.set()
-      await typing_task
+      await ActionManager.stop_typing(update)
 
 
 class ActionManager:
   """Менеджер для регистрации и выполнения действий (Singleton)."""
   _instance = None
+  _typing_tasks = {}
 
   def __new__(cls):
     if cls._instance is None:
@@ -120,6 +119,28 @@ class ActionManager:
         await asyncio.wait_for(stop_event.wait(), timeout=4.5)
       except asyncio.TimeoutError:
         continue
+
+  @staticmethod
+  async def start_typing(update, context):
+    chat_id = update.effective_chat.id
+    if chat_id in ActionManager._typing_tasks:
+      # Уже идет typing
+      return
+    stop_event = asyncio.Event()
+    task = asyncio.create_task(ActionManager.send_typing_action(update, context, stop_event))
+    ActionManager._typing_tasks[chat_id] = (task, stop_event)
+
+  @staticmethod
+  async def stop_typing(update):
+    chat_id = update.effective_chat.id
+    if chat_id in ActionManager._typing_tasks:
+      task, stop_event = ActionManager._typing_tasks[chat_id]
+      stop_event.set()
+      try:
+        await task
+      except Exception:
+        pass
+      del ActionManager._typing_tasks[chat_id]
 
   @staticmethod
   async def handle(name: str, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
