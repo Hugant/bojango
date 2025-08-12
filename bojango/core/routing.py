@@ -84,8 +84,8 @@ class Router:
     """
 		for command, handler in self._commands.items():
 			application.add_handler(CommandHandler(command, handler))
+
 		for query, handler in self._callbacks.items():
-			print(query)
 			application.add_handler(CallbackQueryHandler(handler, pattern=f'^{re.escape(query)}(?:\\?|$)'))
 
 		for pattern, handler in self._message_handlers:

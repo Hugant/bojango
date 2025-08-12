@@ -1,16 +1,24 @@
 import asyncio
+import os
+
+from dotenv import load_dotenv
+from telegram import InlineKeyboardMarkup, InlineKeyboardButton
 
 from bojango.action import ActionManager
 from bojango.core.bot import BojangoBot
 from bojango.core.routing import callback
 from bojango.action.screen import ActionScreen
-from bojango.utils.format import BaseFormatter, MarkdownV2Formatter
 
+load_dotenv()
 
 @callback('s_start')
 async def s_start(update, context):
-	yield ActionScreen(text='Start message')
-	await ActionManager.redirect('s_second', update, context)
+	bot = BojangoBot.get_instance()
+	await bot.send_message(int(os.getenv('TEST_CHAT_ID')), 'Сообщение с кнопкой от ptb', reply_markup=InlineKeyboardMarkup(
+		[
+			[InlineKeyboardButton(text='Следующий шаг', callback_data='s_second')]
+		]
+	))
 
 
 @callback('s_second')

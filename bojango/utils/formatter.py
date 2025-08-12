@@ -46,16 +46,10 @@ class TelegramTextFormatter:
 			Возвращает маркеры (например, &&b) обратно в спецсимволы внутри блоков ```...```,
 			чтобы они не экранировались Telegram.
 		"""
-		print('-----------')
-		print(text)
-		print('-----------')
 		def replacer(match):
-			print(match)
 			block = match.group(0)
 			for old, new in self._pre_replace:
 				block = block.replace(new, old)
-			print('---blcok')
-			print(block)
 			return block
 
 		return re.sub(r'&&q&&q&&q.*?&&q&&q&&q', replacer, text, flags=re.DOTALL)

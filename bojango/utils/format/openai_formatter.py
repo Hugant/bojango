@@ -35,6 +35,5 @@ class OpenaiFormatter(BaseFormatter):
 		text = text.replace('#', '')
 		text = text.replace('@@STAR@@', '\*')
 		text = text.replace('@@BOLD@@', '*')
-		# #
-		print(text)
+
 		return text
