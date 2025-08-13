@@ -16,9 +16,16 @@ async def s_start(update, context):
 	bot = BojangoBot.get_instance()
 	await bot.send_message(int(os.getenv('TEST_CHAT_ID')), 'Сообщение с кнопкой от ptb', reply_markup=InlineKeyboardMarkup(
 		[
-			[InlineKeyboardButton(text='Следующий шаг', callback_data='s_second')]
+			[InlineKeyboardButton(text='Следующий шаг', callback_data='l_second')]
 		]
 	))
+
+
+@callback('l_second')
+async def l_second(update, context):
+	print(update)
+	print(context)
+	await ActionManager.redirect('s_third', update, context)
 
 
 @callback('s_second')

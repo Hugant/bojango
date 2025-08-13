@@ -46,5 +46,8 @@ def decode_callback_data(callback_data: str) -> Tuple[str, Dict[str, Any] | None
 def pop_user_data_kwargs(query: CallbackQuery, user_data: ContextTypes.user_data) -> Dict[str, Any]:
   if query and query.data and user_data:
     action_name, query_args = decode_callback_data(query.data)
-    return user_data.pop(query_args.get('qid'), {})
+    if query_args:
+      return user_data.pop(query_args.get('qid'), {})
+    else:
+      return {}
   return {}
