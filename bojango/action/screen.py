@@ -44,6 +44,10 @@ class ActionScreen:
     text: str | LateValue | None = None,
     image: str | bytes | None = None,
     file: str | bytes | None = None,
+    video: str | bytes | None = None,
+    video_note: str | bytes | None = None,
+    voice: str | bytes | None = None,
+    audio: str | bytes | None = None,
     buttons: list[list[ActionButton]] | None = None,
     screen_type: ScreenType = ScreenType.REPLACE,
     message_id: int | None = None,
@@ -56,15 +60,21 @@ class ActionScreen:
     :param message_id: ID сообщения для редактирования, если применимо.
     """
 
-    if text is None and file is None and image is None:
-      raise ValueError('You must specify either text, image or file')
+    if all(x is None for x in (text, image, file, video, video_note, voice, audio)):
+      raise ValueError('You must specify either text, image, file, video or voice')
 
-    if image and file:
-      raise ValueError('Cannot attach both image and file to a single message.')
+    count = sum(x is not None for x in (image, file, video, video_note, voice, audio))
+    if count > 1:
+      raise ValueError('Cannot attach both image, file, video, video_note, voice to a single message.')
 
     self.text = text
     self.image = image
     self.file = file
+    self.video = video
+    self.video_note = video_note
+    self.voice = voice
+    self.audio = audio
+
     self.buttons = buttons or []
     self.screen_type = screen_type
     self.message_id = message_id
@@ -85,14 +95,14 @@ class ActionScreen:
 
     logger.info(f'Rendering screen: {self.screen_type}, Chat ID: {update.effective_chat.id}')
 
-    try:
-      await behavior.render(screen=self, update=update, context=context, strategy=strategy)
+    # try:
+    await behavior.render(screen=self, update=update, context=context, strategy=strategy)
 
-      if update.callback_query:
+    if update.callback_query:
         await update.callback_query.answer()
-    except Exception as e:
-      logger.error(f'Screen render error: {e}')
-      # raise
+    # except Exception as e:
+    #   logger.error(f'Screen render error: {e}')
+    #   # raise
 
   def resolve_text(self, text: str | LateValue) -> str:
     """

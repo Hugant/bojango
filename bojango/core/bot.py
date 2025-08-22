@@ -141,6 +141,7 @@ class BojangoBot:
     :return: Объект отправленного сообщения.
     """
     self.logger.debug('Sending message to chat %s', chat_id)
+    text = self.config.formatter().format(text)
     return await self.__app.bot.send_message(chat_id=chat_id, text=text, parse_mode=parse_mode,
                                              reply_markup=reply_markup)
 
@@ -156,6 +157,7 @@ class BojangoBot:
     :param reply_markup: Клавиатура или инлайн-кнопки.
     """
     self.logger.debug('Editing message %s in chat %s', message_id, chat_id)
-    await self.__app.bot.edit_message_text(chat_id=chat_id, message_id=message_id, text=new_text, parse_mode=parse_mode,
+    text = self.config.formatter().format(new_text)
+    await self.__app.bot.edit_message_text(chat_id=chat_id, message_id=message_id, text=text, parse_mode=parse_mode,
                                            reply_markup=reply_markup)
 

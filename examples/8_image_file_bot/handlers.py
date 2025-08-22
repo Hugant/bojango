@@ -35,9 +35,21 @@ async def s_image(update, context):
 	yield ActionScreen(
 		image='images/hb_chat.png',
 		buttons=[
+			[ActionButton('Заменить на другое', action_name='s_image_replace')],
 			[ActionButton('Назад', action_name='s_image_menu')],
 		]
 	)
+
+@callback('s_image_replace')
+async def s_image_replace(update, context):
+	yield ActionScreen(
+		image='images/hb_sinops.png',
+		buttons=[
+			[ActionButton('Заменить на другое', action_name='s_image')],
+			[ActionButton('Назад', action_name='s_image_menu')],
+		]
+	)
+
 
 
 @callback('s_image_with_text')
@@ -89,7 +101,7 @@ async def s_file_menu(update, context):
 @callback('s_file')
 async def s_file(update, context):
 	yield ActionScreen(
-		file='files/hb_chat.txt',
+		file='../13_media_example/media/files/hb_chat.txt',
 		buttons=[
 			[ActionButton('Назад', action_name='s_file_menu')],
 		]
@@ -100,7 +112,7 @@ async def s_file(update, context):
 async def s_file_with_text(update, context):
 	yield ActionScreen(
 		text='Изображение с текстом',
-		file='files/hb_ticker.txt',
+		file='../13_media_example/media/files/hb_ticker.txt',
 		buttons=[
 			[ActionButton('Назад', action_name='s_file_menu')],
 		]
@@ -120,7 +132,7 @@ async def m_file(update, context):
 @callback('s_file_with_reply_answer')
 async def s_file_with_reply_answer(update, context):
 	yield ActionScreen(
-		file='files/hb_sinops.txt',
+		file='../13_media_example/media/files/hb_sinops.txt',
 		screen_type=ScreenType.REPLY,
 		message_id=update.message.message_id,
 		buttons=[

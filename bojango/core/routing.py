@@ -27,7 +27,10 @@ class Router:
 			cls._instance._callbacks = {}
 			cls._instance._message_handlers = []
 			cls._instance._audio_handler = None
+			cls._instance._voice_handler = None
 			cls._instance._video_note_handler = None
+			cls._instance._file_handler = None
+			cls._instance._video_handler = None
 			cls._instance._image_handler = None
 		return cls._instance
 
@@ -55,11 +58,19 @@ class Router:
 
 	def register_audio_handler(self, handler: Callable) -> None:
 		"""
-		Регистрирует обработчик аудио сообщений.
+		Регистрирует обработчик аудоифайлов.
 
-		:param handler: Функция-обработчик аудио.
+		:param handler: Функция-обработчик аудиофайлов.
 		"""
 		self._audio_handler = handler
+
+	def register_voice_handler(self, handler: Callable) -> None:
+		"""
+		Регистрирует обработчик голосовых сообщений.
+
+		:param handler: Функция-обработчик голосовых сообщений.
+		"""
+		self._voice_handler = handler
 
 	def register_video_note_handler(self, handler: Callable) -> None:
 		"""
@@ -68,6 +79,22 @@ class Router:
 		:param handler: Функция-обработчик видео-заметок.
 		"""
 		self._video_note_handler = handler
+
+	def register_file_handler(self, handler: Callable) -> None:
+		"""
+		Регистрирует обработчик файлов.
+
+		:param handler: Функция-обработчик файлов.
+		"""
+		self._file_handler = handler
+
+	def register_video_handler(self, handler: Callable) -> None:
+		"""
+		Регистрирует обработчик видео.
+
+		:param handler: Функция-обработчик видео.
+		"""
+		self._video_handler = handler
 
 	def register_image_handler(self, handler: Callable) -> None:
 		"""
@@ -92,13 +119,22 @@ class Router:
 			application.add_handler(MessageHandler(filters.TEXT & filters.Regex(pattern), handler))
 
 		if self._audio_handler:
-			application.add_handler(MessageHandler(filters.VOICE, self._audio_handler))
+			application.add_handler(MessageHandler(filters.AUDIO, self._audio_handler))
+
+		if self._voice_handler:
+			application.add_handler(MessageHandler(filters.VOICE, self._voice_handler))
 
 		if self._video_note_handler:
 			application.add_handler(MessageHandler(filters.VIDEO_NOTE, self._video_note_handler))
 
+		if self._video_handler:
+			application.add_handler(MessageHandler(filters.VIDEO, self._video_handler))
+
 		if self._image_handler:
 			application.add_handler(MessageHandler(filters.PHOTO, self._image_handler))
+
+		if self._file_handler:
+			application.add_handler(MessageHandler(filters.ATTACHMENT, self._file_handler))
 
 	def get_routes(self) -> dict[str, Callable]:
 		"""Возвращает все зарегистрированные маршруты.
@@ -192,18 +228,31 @@ def image() -> Callable:
 	def decorator(handler: Callable) -> Callable:
 		router = Router()
 		router.register_image_handler(handler)
-		return(handler)
+		return handler
 	
 	return decorator
 
 def audio() -> Callable:
 	"""
-	Декоратор для регистрации обработчика аудио сообщений.
+	Декоратор для регистрации обработчика аудиофайлов.
 	"""
 
 	def decorator(handler: Callable) -> Callable:
 		router = Router()
 		router.register_audio_handler(handler)
+		return handler
+
+	return decorator
+
+
+def voice() -> Callable:
+	"""
+	Декоратор для регистрации обработчика голосовых сообщений.
+	"""
+
+	def decorator(handler: Callable) -> Callable:
+		router = Router()
+		router.register_voice_handler(handler)
 		return handler
 
 	return decorator
@@ -222,121 +271,27 @@ def video_note() -> Callable:
 	return decorator
 
 
+def file() -> Callable:
+	"""
+	Декоратор для регистрации обработчика голосовых сообщений.
+	"""
 
-# TODO: Переписать методику работы с языками
-# ⚙️ Что можно улучшить или упростить
-# 1. Проблема глобального состояния → set_language() меняет default_language глобально
-# Это может создать гонки состояний, особенно если параллельно обрабатываются несколько пользователей.
-#
-# ✅ Решение:
-# Убираем set_language() из боевого кода. Вместо этого всегда передаём lang в get_translation() и translate().
-#
-# ➡️ Например:
-#
-# python
-# Copy
-# Edit
-# def translate(self, key: str, lang: str | None = None, **kwargs) -> str:
-#   translation = self.get_translation(lang)
-#   ...
-# И далее:
-#
-# python
-# Copy
-# Edit
-# localizer.translate('some_key', lang=user.lang)
-# 2. Singleton с явной инициализацией — может быть проблемным
-# Ты проверяешь наличие _instance, но если где-то забыть __init__, код сломается.
-#
-# ✅ Решение:
-# Создай отдельный метод для инициализации:
-#
-# python
-# Copy
-# Edit
-# @classmethod
-# def initialize(cls, locales_dir: str, default_language: str = 'ru') -> None:
-#   if cls._instance is None:
-#     cls._instance = cls(locales_dir, default_language)
-# Затем вызываешь один раз при старте бота:
-#
-# python
-# Copy
-# Edit
-# LocalizationManager.initialize(locales_dir='locales', default_language='ru')
-# 3. Идея: Сделать LocalizerService без Singleton
-# Если хочешь избежать глобального состояния, можешь создать обёртку, где каждый пользователь получает независимый объект.
-#
-# 4. Идея: Fallback по умолчанию, если перевода нет
-# Сейчас ты выбрасываешь TranslationKeyNotFoundError, но может быть полезно — возвращать сам key и логировать.
-#
-# Альтернатива:
-# Добавь параметр strict=True и в translate:
-#
-# python
-# Copy
-# Edit
-# if translated_text == key:
-#   if strict:
-#     raise TranslationKeyNotFoundError(key)
-#   logger.warning(f'Missing translation: {key}')
-#   return key
-# 💾 Улучшенный translate() с параметром lang и fallback:
-# python
-# Copy
-# Edit
-# def translate(self, key: str, lang: str | None = None, strict: bool = False, **kwargs) -> str:
-#   translation = self.get_translation(lang)
-#   try:
-#     translated_text = translation.gettext(key)
-#     if translated_text == key and strict:
-#       raise KeyError
-#     logger.debug('Translating key "%s": %s', key, translated_text)
-#     return translated_text % kwargs if kwargs else translated_text
-#   except KeyError:
-#     logger.warning('Translation key "%s" not found.', key)
-#     return key
-# 🧩 Вариант вызова:
-# Вместо глобального set_language():
-#
-# python
-# Copy
-# Edit
-# localizer = LocalizationManager.get_instance()
-# text = localizer.translate('welcome_text', lang=user.lang)
-# 🧩 LateValue — идеально, оставить как есть ✅
-# Резюме:
-# Пункт	Оценка / Совет
-# Singleton	Ок, но лучше через initialize()
-# set_language()	Потенциальная угроза — убрать из использования
-# translate()	Добавить lang, убрать глобальный state
-# LateValue	Отлично реализовано
-# Logging	Всё на уровне, можно расширить в strict=False
-# Готов к следующему блоку — можем посмотреть, как ты интегрируешь LocalizationManager в шаблонизацию или в тексты сообщений.
+	def decorator(handler: Callable) -> Callable:
+		router = Router()
+		router.register_file_handler(handler)
+		return handler
 
-# TODO:
-# 2. DRY: Обёртка для сокращения одинаковых функций
-# Можно сделать универсальный декоратор-обёртку, чтобы не писать одно и то же:
-#
-# python
-# Copy
-# Edit
-# def redirect_command(target: str):
-# 	def wrapper(func):
-# 		@command(func.__name__[2:])  # имя команды = имя функции без 'c_'
-# 		async def inner(update, context):
-# 			await ActionManager.redirect(target, update, context)
-# 		return inner
-# 	return wrapper
-# Пример использования:
-#
-# python
-# Copy
-# Edit
-# @redirect_command('l_start')
-# async def c_start(update, context): pass
-#
-# @redirect_command('s_lang')
-# async def c_lang(update, context): pass
-# ➡️ Это уменьшит дублирование, но добавит немного абстракции — только если хочешь чистоту.
+	return decorator
 
+
+def video() -> Callable:
+	"""
+	Декоратор для регистрации обработчика голосовых сообщений.
+	"""
+
+	def decorator(handler: Callable) -> Callable:
+		router = Router()
+		router.register_video_handler(handler)
+		return handler
+
+	return decorator
