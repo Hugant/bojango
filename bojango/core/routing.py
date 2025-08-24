@@ -2,7 +2,8 @@ import re
 from typing import Callable, Self
 
 from telegram import Update
-from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes, MessageHandler, filters
+from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes, MessageHandler, filters, \
+	ChatJoinRequestHandler
 
 from bojango.action.dispatcher import ActionManager
 from bojango.action.screen import ActionScreen
@@ -32,6 +33,7 @@ class Router:
 			cls._instance._file_handler = None
 			cls._instance._video_handler = None
 			cls._instance._image_handler = None
+			cls._instance._join_request_handler = None
 		return cls._instance
 
 	def register_command(self, command: str, handler: Callable) -> None:
@@ -104,6 +106,14 @@ class Router:
 		"""
 		self._image_handler = handler
 
+	def register_join_request_handler(self, handler: Callable) -> None:
+		"""
+		Регистрирует обработчик входов в канал или чат
+
+		:param handler: Функция-обработчик входов в канал или чат
+		"""
+		self._join_request_handler = handler
+
 	def attach_to_application(self, application: Application) -> None:
 		"""Привязывает маршруты к Telegram Application.
 
@@ -135,6 +145,9 @@ class Router:
 
 		if self._file_handler:
 			application.add_handler(MessageHandler(filters.ATTACHMENT, self._file_handler))
+
+		if self._join_request_handler:
+			application.add_handler(ChatJoinRequestHandler(self._join_request_handler))
 
 	def get_routes(self) -> dict[str, Callable]:
 		"""Возвращает все зарегистрированные маршруты.
@@ -292,6 +305,19 @@ def video() -> Callable:
 	def decorator(handler: Callable) -> Callable:
 		router = Router()
 		router.register_video_handler(handler)
+		return handler
+
+	return decorator
+
+
+def join_request() -> Callable:
+	"""
+	Декоратор для регистрации обработчика голосовых сообщений.
+	"""
+
+	def decorator(handler: Callable) -> Callable:
+		router = Router()
+		router.register_join_request_handler(handler)
 		return handler
 
 	return decorator
