@@ -1,11 +1,41 @@
-from typing import Any
+import os
+import re
+from pathlib import Path
+from typing import Any, Union
 
-from telegram import Update
+from telegram import Update, InputFile
 from telegram.constants import ChatAction
 from telegram.ext import ContextTypes
 
 from bojango.action.screen import ActionScreen
 from bojango.action.strategies.base import BaseContentStrategy, Transport, MessageKind
+
+
+_FILE_ID_RE = re.compile(r'^[A-Za-z0-9_-]{20,200}$')  # «похоже на file_id»
+
+def _looks_like_url(s: str) -> bool:
+    return s.startswith(('http://', 'https://'))
+
+def _looks_like_path(s: str) -> bool:
+    # Быстро: есть разделитель пути ИЛИ расширение ИЛИ Windows-диск
+    if ('/' in s) or ('\\' in s):
+        return True
+    if re.search(r'\.[A-Za-z0-9]{1,5}$', s):  # voice.ogg / img.png / doc.pdf
+        return True
+    if re.match(r'^[A-Za-z]:\\', s):  # C:\...
+        return True
+    return False
+
+def _looks_like_file_id(s: str) -> bool:
+    # file_id не содержит / \ . и обычно длинный base64url-подобный
+    return _FILE_ID_RE.fullmatch(s) is not None
+
+def resolve_media_arg(s: str) -> (str | bytes, str | None):
+  if _looks_like_path(s) or os.path.exists(s):
+    path = Path(s)
+    return path.read_bytes(), path.name
+
+  return s, None
 
 
 class TextContentStrategy(BaseContentStrategy):
@@ -48,14 +78,12 @@ class ImageContentStrategy(BaseContentStrategy):
     update: Update,
     context: ContextTypes.DEFAULT_TYPE
   ) -> dict:
-    if isinstance(screen.image, str):
-      photo = open(screen.image, 'rb')
-    else:
-      photo = screen.image
+    filedata, filename = resolve_media_arg(screen.image)
 
     data = {
       'chat_id': update.effective_chat.id,
-      'photo': photo,
+      'photo': filedata,
+      'filename': filename,
       'reply_markup': screen.generate_keyboard(context),
       'parse_mode': BaseContentStrategy.get_parse_mode(),
     }
@@ -86,14 +114,12 @@ class FileContentStrategy(BaseContentStrategy):
     update: Update,
     context: ContextTypes.DEFAULT_TYPE
   ) -> dict:
-    if isinstance(screen.file, str):
-      document = open(screen.file, 'rb')
-    else:
-      document = screen.file
+    filedata, filename = resolve_media_arg(screen.file)
 
     data = {
       'chat_id': update.effective_chat.id,
-      'document': document,
+      'document': filedata,
+      'filename': filename,
       'reply_markup': screen.generate_keyboard(context),
       'parse_mode': BaseContentStrategy.get_parse_mode(),
     }
@@ -124,14 +150,12 @@ class VideoContentStrategy(BaseContentStrategy):
     update: Update,
     context: ContextTypes.DEFAULT_TYPE
   ) -> dict:
-    if isinstance(screen.video, str):
-      video = open(screen.video, 'rb')
-    else:
-      video = screen.video
+    filedata, filename = resolve_media_arg(screen.video)
 
     data = {
       'chat_id': update.effective_chat.id,
-      'video': video,
+      'video': filedata,
+      'filename': filename,
       'reply_markup': screen.generate_keyboard(context),
       'parse_mode': BaseContentStrategy.get_parse_mode(),
     }
@@ -162,14 +186,12 @@ class VideoNoteContentStrategy(BaseContentStrategy):
     update: Update,
     context: ContextTypes.DEFAULT_TYPE
   ) -> dict:
-    if isinstance(screen.video_note, str):
-      video_note = open(screen.video_note, 'rb')
-    else:
-      video_note = screen.video_note
+    filedata, filename = resolve_media_arg(screen.video_note)
 
     data = {
       'chat_id': update.effective_chat.id,
-      'video_note': video_note,
+      'video_note': filedata,
+      'filename': filename,
       'length': 360
     }
 
@@ -196,14 +218,12 @@ class VoiceContentStrategy(BaseContentStrategy):
     update: Update,
     context: ContextTypes.DEFAULT_TYPE
   ) -> dict:
-    if isinstance(screen.voice, str):
-      voice = open(screen.voice, 'rb')
-    else:
-      voice = screen.video
+    filedata, filename = resolve_media_arg(screen.voice)
 
     data = {
       'chat_id': update.effective_chat.id,
-      'voice': voice,
+      'voice': filedata,
+      'filename': filename,
       'reply_markup': screen.generate_keyboard(context),
       'parse_mode': BaseContentStrategy.get_parse_mode(),
     }
@@ -234,14 +254,12 @@ class AudioContentStrategy(BaseContentStrategy):
     update: Update,
     context: ContextTypes.DEFAULT_TYPE
   ) -> dict:
-    if isinstance(screen.audio, str):
-      audio = open(screen.audio, 'rb')
-    else:
-      audio = screen.video
+    filedata, filename = resolve_media_arg(screen.audio)
 
     data = {
       'chat_id': update.effective_chat.id,
-      'audio': audio,
+      'audio': filedata,
+      'filename': filename,
       'reply_markup': screen.generate_keyboard(context),
       'parse_mode': BaseContentStrategy.get_parse_mode(),
     }
