@@ -34,6 +34,7 @@ class Router:
 			cls._instance._video_handler = None
 			cls._instance._image_handler = None
 			cls._instance._join_request_handler = None
+			cls._instance._any_handler = None
 		return cls._instance
 
 	def register_command(self, command: str, handler: Callable) -> None:
@@ -114,6 +115,14 @@ class Router:
 		"""
 		self._join_request_handler = handler
 
+	def register_any_handler(self, handler: Callable) -> None:
+		"""
+		Регистрирует обработчик любого медиа
+
+		:param handler: Функция-обработчик любого медиа
+		"""
+		self._any_handler = handler
+
 	def attach_to_application(self, application: Application) -> None:
 		"""Привязывает маршруты к Telegram Application.
 
@@ -148,6 +157,12 @@ class Router:
 
 		if self._join_request_handler:
 			application.add_handler(ChatJoinRequestHandler(self._join_request_handler))
+
+		if self._any_handler:
+			ANY_MEDIA = filters.PHOTO | filters.VIDEO | filters.ANIMATION | filters.ATTACHMENT | filters.AUDIO | filters.VOICE | filters.VIDEO_NOTE
+			ANY_TEXT_OR_CAPTION = filters.TEXT | filters.CAPTION
+
+			application.add_handler(MessageHandler(ANY_TEXT_OR_CAPTION | ANY_MEDIA, self._any_handler))
 
 	def get_routes(self) -> dict[str, Callable]:
 		"""Возвращает все зарегистрированные маршруты.
@@ -318,6 +333,19 @@ def join_request() -> Callable:
 	def decorator(handler: Callable) -> Callable:
 		router = Router()
 		router.register_join_request_handler(handler)
+		return handler
+
+	return decorator
+
+
+def any_message() -> Callable:
+	"""
+	Декоратор для регистрации обработчика голосовых сообщений.
+	"""
+
+	def decorator(handler: Callable) -> Callable:
+		router = Router()
+		router.register_any_handler(handler)
 		return handler
 
 	return decorator
