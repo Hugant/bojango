@@ -162,7 +162,7 @@ class Router:
 			ANY_MEDIA = filters.PHOTO | filters.VIDEO | filters.ANIMATION | filters.ATTACHMENT | filters.AUDIO | filters.VOICE | filters.VIDEO_NOTE
 			ANY_TEXT_OR_CAPTION = filters.TEXT | filters.CAPTION
 
-			application.add_handler(MessageHandler(ANY_TEXT_OR_CAPTION | ANY_MEDIA, self._any_handler))
+			application.add_handler(MessageHandler(ANY_TEXT_OR_CAPTION | ANY_MEDIA, self._any_handler), group=-10)
 
 	def get_routes(self) -> dict[str, Callable]:
 		"""Возвращает все зарегистрированные маршруты.

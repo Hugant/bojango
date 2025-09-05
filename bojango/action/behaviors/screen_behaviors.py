@@ -22,17 +22,6 @@ class NewScreenBehavior(BaseScreenBehavior):
     data = await strategy.prepare(screen, update, context)
     transport = strategy.get_transport(context)
     await transport.send(**data)
-    # if isinstance(strategy, ImageContentStrategy):
-    #   await context.bot.send_chat_action(chat_id=update.effective_chat.id, action=ChatAction.UPLOAD_PHOTO)
-    #   await context.bot.send_photo(**data)
-    # elif isinstance(strategy, FileContentStrategy):
-    #   await context.bot.send_chat_action(chat_id=update.effective_chat.id, action=ChatAction.UPLOAD_DOCUMENT)
-    #   await context.bot.send_document(**data)
-    # elif isinstance(strategy, TextContentStrategy):
-    #   await context.bot.send_chat_action(chat_id=update.effective_chat.id, action=ChatAction.TYPING)
-    #   await context.bot.send_message(**data)
-    # else:
-    #   raise ValueError(f'Unknown content strategy: {type(strategy).__name__}')
 
 
 @register_behavior(ScreenType.REPLY)

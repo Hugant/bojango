@@ -68,10 +68,16 @@ class Transport(ABC):
           kwargs['chat_id'] = chat_id
         await self._with_action(chat_id or data['chat_id'], self._call(self.api_method_edit, **kwargs))
       except Exception:
-        await self._call('delete_message', chat_id=chat_id, message_id=message_id)
+        try:
+          await self._call('delete_message', chat_id=chat_id, message_id=message_id)
+        except Exception:
+          pass
         await self._with_action(chat_id, self._call(self.api_method_send, **data))
     else:
-      await self._call('delete_message', chat_id=chat_id, message_id=message_id)
+      try:
+        await self._call('delete_message', chat_id=chat_id, message_id=message_id)
+      except Exception:
+        pass
       await self._with_action(chat_id, self._call(self.api_method_send, **data))
 
   async def delete(self, *, chat_id: int, message_id: int) -> None:
